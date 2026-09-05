@@ -1,0 +1,277 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&family=IBM+Plex+Mono:wght@500&display=swap">
+  <style>
+    body {
+      margin: 0; background: #eff1f5; color: #10131a;
+      font-family: Sarabun, 'Segoe UI', system-ui, sans-serif;
+      font-size: 14px; line-height: 1.6; -webkit-font-smoothing: antialiased;
+    }
+    * { box-sizing: border-box; }
+    .num { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+    button { font: inherit; cursor: pointer; }
+    a { color: #3b3fd8; text-decoration: none; }
+    a:hover { color: #2f33bd; }
+    .hint { font-size: 12.5px; color: #626a7c; }
+  </style>
+</helmet>
+
+<div style="width: 1440px; height: 900px; background: #eff1f5; overflow: hidden; display: flex; flex-direction: column">
+
+  <div style="min-height: 56px; background: #ffffff; border-bottom: 1px solid #dfe3ec; display: flex; align-items: center; gap: 8px; padding: 0 16px; flex: none">
+    <span style="font-weight: 700; font-size: 15px">คิวโพสต์</span>
+    <span style="display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; background: #e4f3ec; color: #1f7a4d">
+      <span style="width: 6px; height: 6px; border-radius: 50%; background: currentColor"></span>
+      ตัวส่งโพสต์ทำงานอยู่
+    </span>
+    <span class="hint">โควตา Instagram 14 / 100 วันนี้</span>
+    <span style="flex-grow: 1"></span>
+    <sc-for list="{{topNav}}" as="t" hint-placeholder-count="6">
+      <button style="{{t.style}}">
+        <span style="{{t.iconStyle}}"></span>
+        {{t.label}}
+      </button>
+    </sc-for>
+    <button style="height: 34px; padding: 0 14px; border-radius: 6px; border: 1px solid #3b3fd8; background: #3b3fd8; color: #fff; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px">
+      <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 4v12M4 10h12"/></svg>
+      เพิ่มโพสต์
+    </button>
+  </div>
+
+  <div style="flex-grow: 1; display: grid; grid-template-columns: minmax(0, 1fr) 372px; min-height: 0">
+
+    <!-- ปฏิทินสัปดาห์ -->
+    <div style="padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; min-height: 0">
+      <div style="display: flex; align-items: center; gap: 8px">
+        <span style="font-size: 14.5px; font-weight: 700">8 – 14 กันยายน 2026</span>
+        <span class="hint">9 โพสต์ในสัปดาห์นี้</span>
+        <span style="flex-grow: 1"></span>
+        <sc-for list="{{views}}" as="v" hint-placeholder-count="3">
+          <button onClick="{{ v.pick }}" style="{{v.style}}">{{v.label}}</button>
+        </sc-for>
+      </div>
+
+      <div style="flex-grow: 1; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; min-height: 0">
+        <sc-for list="{{week}}" as="d" hint-placeholder-count="7">
+          <div style="background: #ffffff; border: 1px solid {{d.line}}; border-radius: 10px; display: flex; flex-direction: column; min-height: 0; overflow: hidden">
+            <div style="padding: 9px 10px; border-bottom: 1px solid #dfe3ec; display: flex; align-items: baseline; gap: 6px; background: {{d.headBg}}">
+              <span style="font-size: 12px; font-weight: 600; color: #626a7c">{{d.dow}}</span>
+              <span class="num" style="font-size: 15px; font-weight: 700">{{d.date}}</span>
+              <span style="flex-grow: 1"></span>
+              <span class="num" style="font-size: 11.5px; color: #626a7c">{{d.count}}</span>
+            </div>
+            <div style="flex-grow: 1; padding: 8px; display: flex; flex-direction: column; gap: 6px; overflow-y: auto">
+              <sc-for list="{{d.posts}}" as="p" hint-placeholder-count="2">
+                <button onClick="{{ p.open }}" style="{{p.style}}">
+                  <span style="display: flex; align-items: center; gap: 6px">
+                    <span style="{{p.iconStyle}}"></span>
+                    <span class="num" style="font-size: 12.5px; font-weight: 700">{{p.time}}</span>
+                  </span>
+                  <span style="font-size: 11.5px; color: #626a7c; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden">{{p.caption}}</span>
+                </button>
+              </sc-for>
+              <button style="min-height: 34px; border-radius: 7px; border: 1px dashed #dfe3ec; background: #ffffff; color: #99a1b3; font-size: 12px">＋</button>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+    <!-- แผงรายละเอียด — คงไว้บนจอกว้าง แต่บนมือถือกลายเป็นแผงเลื่อนขึ้น ไม่ใช่หายไปเฉยๆ -->
+    <div style="background: #ffffff; border-left: 1px solid #dfe3ec; padding: 14px 16px; display: flex; flex-direction: column; gap: 12px; overflow-y: auto">
+      <div style="display: flex; align-items: center; gap: 8px">
+        <span class="num" style="font-size: 20px; font-weight: 700">{{sel.time}}</span>
+        <span style="display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; background: {{sel.pillBg}}; color: {{sel.pillInk}}">
+          <span style="{{sel.iconStyle}}"></span>
+          {{sel.word}}
+        </span>
+      </div>
+
+      <div style="border-radius: 8px; overflow: hidden; border: 1px solid #dfe3ec; height: 190px; background: {{sel.art}}"></div>
+
+      <div style="font-size: 13.5px; color: #3d4453; line-height: 1.6">{{sel.caption}}</div>
+
+      <div style="display: flex; gap: 6px; flex-wrap: wrap">
+        <sc-for list="{{sel.pages}}" as="pg" hint-placeholder-count="2">
+          <span style="{{pg.style}}">{{pg.name}} · {{pg.word}}</span>
+        </sc-for>
+      </div>
+
+      <div style="height: 1px; background: #dfe3ec"></div>
+
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
+        <sc-for list="{{acts}}" as="a" hint-placeholder-count="4">
+          <button style="{{a.style}}">
+            <span style="{{a.iconStyle}}"></span>
+            {{a.label}}
+          </button>
+        </sc-for>
+      </div>
+
+      <button style="min-height: 40px; border-radius: 6px; border: 1px solid #dfe3ec; background: #ffffff; color: #b42318; font-size: 13px; font-weight: 600">ยกเลิกโพสต์นี้</button>
+
+      <div style="background: #f7f8fb; border: 1px solid #dfe3ec; border-radius: 8px; padding: 10px 11px; display: flex; flex-direction: column; gap: 5px">
+        <span style="font-size: 12px; font-weight: 600; color: #626a7c">ประวัติการส่ง</span>
+        <sc-for list="{{log}}" as="l" hint-placeholder-count="3">
+          <span style="font-size: 12px; color: #3d4453">
+            <span class="num">{{l.at}}</span> · {{l.text}}
+          </span>
+        </sc-for>
+      </div>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+
+<script data-dc-script>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { sel: '10-12:30', view: 0 };
+  }
+
+  mask(inner, color, size) {
+    const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="none" stroke="black" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">' + inner + '</svg>';
+    const s = size || 16;
+    return 'width:' + s + 'px;height:' + s + 'px;flex:none;display:inline-block;background-color:' + color + ';'
+      + "-webkit-mask:url('data:image/svg+xml;utf8," + encodeURIComponent(svg) + "') center/contain no-repeat;"
+      + "mask:url('data:image/svg+xml;utf8," + encodeURIComponent(svg) + "') center/contain no-repeat;";
+  }
+
+  renderVals() {
+    const ICONS = {
+      posted: '<path d="M4 10.5l4 4 8-9"/>',
+      pending: '<circle cx="10" cy="10" r="7"/><path d="M10 6v4.5l3 1.6"/>',
+      failed: '<path d="M10 3.5 2.8 16h14.4L10 3.5z"/><path d="M10 8.5v3.2M10 13.8v.1"/>',
+      partial: '<circle cx="10" cy="10" r="7"/><path d="M10 3v14"/>',
+    };
+    const INK = { posted: '#1f7a4d', pending: '#626a7c', failed: '#b42318', partial: '#a8460a' };
+    const BG = { posted: '#e4f3ec', pending: '#f7f8fb', failed: '#fdecea', partial: '#fdefe4' };
+    const WORD = { posted: 'ขึ้นแล้ว', pending: 'รอโพสต์', failed: 'ล้มเหลว', partial: 'ขึ้นไม่ครบ' };
+
+    const data = [
+      { dow: 'จันทร์', date: '8', posts: [
+        { id: '8-09:00', time: '09:00', status: 'posted', caption: 'เปิดร้านแล้ววันนี้ กาแฟดริปคั่วใหม่' },
+        { id: '8-17:00', time: '17:00', status: 'posted', caption: 'ช่วงเย็นลด 10% ทุกเมนู' } ] },
+      { dow: 'อังคาร', date: '9', posts: [
+        { id: '9-18:00', time: '18:00', status: 'pending', caption: 'ปิดร้านเร็ววันนี้ 20:00' } ] },
+      { dow: 'พุธ', date: '10', posts: [
+        { id: '10-09:00', time: '09:00', status: 'posted', caption: 'กาแฟดริปคั่วใหม่ มาลองก่อนใคร' },
+        { id: '10-12:30', time: '12:30', status: 'partial', caption: 'เมนูใหม่ ข้าวผัดกุ้งสูตรต้นตำรับ ฿89' },
+        { id: '10-17:00', time: '17:00', status: 'pending', caption: 'ซื้อ 1 แถม 1 เฉพาะเมนูที่ร่วมรายการ' } ] },
+      { dow: 'พฤหัส', date: '11', posts: [
+        { id: '11-12:30', time: '12:30', status: 'pending', caption: 'เมนูแนะนำประจำวัน' } ] },
+      { dow: 'ศุกร์', date: '12', posts: [
+        { id: '12-09:00', time: '09:00', status: 'pending', caption: 'สุดสัปดาห์นี้เปิดถึงเที่ยงคืน' },
+        { id: '12-19:00', time: '19:00', status: 'pending', caption: 'ดนตรีสดคืนวันศุกร์' } ] },
+      { dow: 'เสาร์', date: '13', posts: [] },
+      { dow: 'อาทิตย์', date: '14', posts: [
+        { id: '14-11:00', time: '11:00', status: 'pending', caption: 'บรันช์วันอาทิตย์' } ] },
+    ];
+
+    const week = data.map((d) => ({
+      dow: d.dow,
+      date: d.date,
+      count: d.posts.length ? d.posts.length + ' โพสต์' : '—',
+      line: d.date === '10' ? '#cfd4fb' : '#dfe3ec',
+      headBg: d.date === '10' ? '#eceffe' : '#ffffff',
+      posts: d.posts.map((p) => {
+        const on = p.id === this.state.sel;
+        return {
+          time: p.time,
+          caption: p.caption,
+          iconStyle: this.mask(ICONS[p.status], INK[p.status], 14),
+          style: 'width:100%;text-align:left;border-radius:7px;padding:7px 8px;display:flex;flex-direction:column;'
+            + 'gap:3px;border:1px solid ' + (on ? '#3b3fd8' : '#dfe3ec') + ';'
+            + 'border-left:3px solid ' + INK[p.status] + ';'
+            + 'background:' + (on ? '#eceffe' : '#ffffff') + ';',
+          open: () => this.setState({ sel: p.id }),
+        };
+      }),
+    }));
+
+    let found = null;
+    data.forEach((d) => d.posts.forEach((p) => { if (p.id === this.state.sel) found = p; }));
+    const cur = found || data[2].posts[1];
+
+    const selPages = [
+      { name: 'ร้านลุงหนวด', word: 'ขึ้นแล้ว', kind: 'posted' },
+      { name: 'lung_nuad.cafe', word: 'ล้มเหลว', kind: 'failed' },
+    ].map((pg) => ({
+      name: pg.name,
+      word: pg.word,
+      style: 'display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:999px;'
+        + 'font-size:12px;font-weight:600;background:' + BG[pg.kind] + ';color:' + INK[pg.kind] + ';',
+    }));
+
+    const acts = [
+      { label: 'แก้ไขโพสต์', icon: '<path d="M13.5 3.5l3 3L7 16H4v-3z"/>' },
+      { label: 'เลื่อนเวลา', icon: ICONS.pending },
+      { label: 'ทำซ้ำ', icon: '<rect x="6.5" y="6.5" width="11" height="11" rx="2"/><path d="M13.5 3.5h-9a2 2 0 0 0-2 2v9"/>' },
+      { label: 'ส่งขาที่ล้มใหม่', icon: '<path d="M16.5 10a6.5 6.5 0 1 1-2-4.7"/><path d="M16.5 3.5V7H13"/>' },
+    ].map((a) => ({
+      label: a.label,
+      iconStyle: this.mask(a.icon, '#3d4453', 16),
+      style: 'min-height:40px;border-radius:6px;border:1px solid #dfe3ec;background:#ffffff;font-size:13px;'
+        + 'display:inline-flex;align-items:center;justify-content:center;gap:7px;',
+    }));
+
+    const topNav = [
+      { label: 'ทำภาพ', icon: '<path d="M10 2.6l1.9 4.2 4.6.5-3.4 3.1.9 4.5L10 12.7 6 14.9l.9-4.5L3.5 7.3l4.6-.5z"/>' },
+      { label: 'คลังรูป', icon: '<rect x="2.5" y="2.5" width="6" height="6" rx="1.4"/><rect x="11.5" y="2.5" width="6" height="6" rx="1.4"/><rect x="2.5" y="11.5" width="6" height="6" rx="1.4"/><rect x="11.5" y="11.5" width="6" height="6" rx="1.4"/>' },
+      { label: 'ฟีด IG', icon: '<rect x="3" y="3" width="14" height="14" rx="4"/><circle cx="10" cy="10" r="3.4"/><circle cx="14.2" cy="5.8" r="0.9"/>' },
+      { label: 'ผลตอบรับ', icon: '<path d="M3 16.5V9M8 16.5V4M13 16.5v-5M18 16.5v-9"/>' },
+      { label: 'ตั้งค่า', icon: '<circle cx="10" cy="10" r="2.6"/><path d="M10 2.5v2M10 15.5v2M17.5 10h-2M4.5 10h-2M15.3 4.7l-1.4 1.4M6.1 13.9l-1.4 1.4M15.3 15.3l-1.4-1.4M6.1 6.1L4.7 4.7"/>' },
+    ].map((t) => ({
+      label: t.label,
+      iconStyle: this.mask(t.icon, '#3d4453', 16),
+      style: 'height:34px;padding:0 12px;border-radius:6px;border:1px solid #dfe3ec;background:#ffffff;'
+        + 'font-size:13px;display:inline-flex;align-items:center;gap:6px;',
+    }));
+
+    const views = ['สัปดาห์', 'เดือน', 'รายการ'].map((label, i) => {
+      const on = i === this.state.view;
+      return {
+        label,
+        style: 'height:34px;padding:0 13px;border-radius:6px;font-size:13px;'
+          + 'border:1px solid ' + (on ? '#3b3fd8' : '#dfe3ec') + ';'
+          + 'background:' + (on ? '#eceffe' : '#ffffff') + ';'
+          + 'color:' + (on ? '#3b3fd8' : '#3d4453') + ';',
+        pick: () => this.setState({ view: i }),
+      };
+    });
+
+    return {
+      week,
+      topNav,
+      views,
+      acts,
+      sel: {
+        time: cur.time,
+        word: WORD[cur.status],
+        pillBg: BG[cur.status],
+        pillInk: INK[cur.status],
+        iconStyle: this.mask(ICONS[cur.status], INK[cur.status], 13),
+        caption: cur.caption,
+        art: 'linear-gradient(140deg, #4a2b12, #c98f4f)',
+        pages: selPages,
+      },
+      log: [
+        { at: '12:30', text: 'เริ่มส่ง 2 ปลายทาง' },
+        { at: '12:30', text: 'ร้านลุงหนวด — ขึ้นแล้ว' },
+        { at: '12:31', text: 'lung_nuad.cafe — token หมดอายุ (190)' },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>

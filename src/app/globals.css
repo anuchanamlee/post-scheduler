@@ -1,0 +1,821 @@
+/* ── design tokens ────────────────────────────────────────────
+   ตัวอักษรเล็กสุด 12px · คู่สีทุกคู่ผ่าน 4.5:1 · เป้าแตะบนจอสัมผัส 44px
+   ────────────────────────────────────────────────────────── */
+
+:root {
+  --ground: #eff1f5;
+  --surface: #ffffff;
+  --surface-2: #f7f8fb;
+  --ink: #10131a;
+  --ink-2: #3d4453;
+  --muted: #626a7c;
+  --line: #dfe3ec;
+  --line-strong: #b9c0d0;
+
+  --accent: #3b3fd8;
+  --accent-hover: #2f33bd;
+  --accent-soft: #eceffe;
+  --accent-line: #cfd4fb;
+
+  --ok: #1f7a4d;      --ok-bg: #e4f3ec;
+  --warn: #8a6a00;    --warn-bg: #fbf3dd;
+  --bad: #b42318;     --bad-bg: #fdecea;
+  --partial: #a8460a; --partial-bg: #fdefe4;  --partial-line: #f3d9c2; --partial-ink: #7a3604;
+
+  --r-sm: 6px; --r: 8px; --r-lg: 10px;
+  --tap: 44px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ground: #0e1016;
+    --surface: #171a22;
+    --surface-2: #1d212b;
+    --ink: #e8eaf1;
+    --ink-2: #c2c8d6;
+    --muted: #99a1b3;
+    --line: #2b303d;
+    --line-strong: #414859;
+
+    --accent: #8f92fb;
+    --accent-hover: #a3a6fc;
+    --accent-soft: #22243a;
+    --accent-line: #383c5e;
+
+    --ok: #7fc09b;      --ok-bg: #16261e;
+    --warn: #d7bb63;    --warn-bg: #262214;
+    --bad: #f2867c;     --bad-bg: #2c1a19;
+    --partial: #eda06a; --partial-bg: #2b2017; --partial-line: #453022; --partial-ink: #f0c49b;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: Sarabun, 'Segoe UI', system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+/* ลิงก์ที่เป็น "พื้นที่กด" ทั้งบล็อก ไม่ควรถูกขีดเส้นใต้เหมือนลิงก์ในข้อความ */
+a.card, a.card:hover, a.day, a.day:hover, a.btn, a.btn:hover,
+a.tab, a.tab:hover, a.month-cell, a.month-cell:hover, a.ig-cell, a.ig-cell:hover
+  { text-decoration: none; }
+a.card, a.day, a.month-cell { color: inherit; }
+
+.num { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+
+/* โฟกัสคีย์บอร์ดต้องเห็นได้ทุกจุด — ห้ามลบ outline ทิ้ง */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--r-sm);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .btn, .card, .day, .draft { transition: border-color .12s ease, background-color .12s ease; }
+}
+
+/* ── controls ─────────────────────────────────────────────── */
+
+.btn {
+  height: 34px; padding: 0 14px; border-radius: var(--r-sm);
+  border: 1px solid var(--line); background: var(--surface); color: var(--ink);
+  font: inherit; font-size: 13px; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  white-space: nowrap;
+}
+.btn:hover { border-color: var(--line-strong); }
+.btn[disabled] { opacity: .5; cursor: default; }
+.btn-primary {
+  background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600;
+}
+.btn-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+.btn-danger { color: var(--bad); }
+.btn-sm { height: 28px; padding: 0 11px; font-size: 12px; }
+
+input, textarea, select {
+  font: inherit; color: var(--ink); background: var(--surface);
+  border: 1px solid var(--line); border-radius: var(--r-sm); padding: 8px 11px;
+  width: 100%;
+}
+input:hover, textarea:hover, select:hover { border-color: var(--line-strong); }
+textarea { min-height: 110px; resize: vertical; line-height: 1.65; }
+
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field > .label { font-size: 12px; font-weight: 600; color: var(--muted); }
+
+/* ── สถานะ ─────────────────────────────────────────────────
+   ความหมายมาจากข้อความเสมอ สีเป็นแค่ตัวช่วยซ้ำ */
+
+.pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 3px 10px; border-radius: 999px;
+  font-size: 12px; font-weight: 600; white-space: nowrap;
+  background: var(--surface-2); color: var(--muted);
+}
+.pill .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex: none; }
+.pill.posted     { background: var(--ok-bg); color: var(--ok); }
+.pill.publishing { background: var(--accent-soft); color: var(--accent); }
+.pill.partial    { background: var(--partial-bg); color: var(--partial); }
+.pill.failed     { background: var(--bad-bg); color: var(--bad); }
+.pill.missed, .pill.cancelled, .pill.skipped { background: var(--warn-bg); color: var(--warn); }
+.pill.pending, .pill.draft, .pill.pending_approval { background: var(--surface-2); color: var(--muted); }
+
+.chips { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+
+/* ── โครงหน้า ─────────────────────────────────────────────── */
+
+.topbar {
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  min-height: 56px; padding: 8px 20px;
+  background: var(--surface); border-bottom: 1px solid var(--line);
+}
+.brand { display: flex; align-items: center; gap: 9px; font-weight: 700; font-size: 15px; }
+.grow { flex-grow: 1; }
+
+.banner {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 10px 20px; font-size: 13.5px;
+  background: var(--partial-bg); border-bottom: 1px solid var(--partial-line);
+  color: var(--partial-ink);
+}
+.banner.critical { background: var(--bad-bg); border-color: var(--bad); color: var(--bad); }
+
+.shell { display: flex; min-height: calc(100vh - 57px); }
+
+.rail {
+  width: 172px; flex: none; background: var(--surface);
+  border-right: 1px solid var(--line); display: flex; flex-direction: column;
+}
+.day {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 9px 16px; cursor: pointer; border: none; width: 100%;
+  border-left: 3px solid transparent; background: transparent; color: inherit;
+  font: inherit; text-align: left;
+}
+.day:hover { background: var(--surface-2); }
+.day[data-active='true'] { border-left-color: var(--accent); background: var(--accent-soft); }
+.day .d-num { font-size: 17px; font-weight: 600; }
+.day .d-dow { font-size: 12px; color: var(--muted); width: 22px; }
+
+.center { flex-grow: 1; min-width: 0; padding: 16px 20px 32px; }
+.aside {
+  width: 340px; flex: none; background: var(--surface);
+  border-left: 1px solid var(--line); padding: 16px;
+}
+
+.queue { display: flex; flex-direction: column; gap: 8px; }
+.card {
+  display: flex; align-items: center; gap: 12px; padding: 11px 13px; width: 100%;
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--r);
+  cursor: pointer; font: inherit; color: inherit; text-align: left;
+}
+.card:hover { border-color: var(--line-strong); }
+.card[data-active='true'] { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.card .thumb { width: 44px; height: 44px; border-radius: 5px; object-fit: cover;
+               flex: none; border: 1px solid var(--line); }
+.card .cap {
+  font-size: 13.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.card .accent { width: 3px; align-self: stretch; border-radius: 2px; flex: none; }
+
+.panel {
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg);
+  padding: 18px 20px; display: flex; flex-direction: column; gap: 14px;
+}
+
+.empty {
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  padding: 48px 16px; color: var(--muted);
+}
+
+.note {
+  padding: 11px 13px; border-radius: var(--r); background: var(--surface-2);
+  color: var(--muted); font-size: 12.5px; line-height: 1.6;
+}
+
+.progress { height: 6px; border-radius: 3px; background: var(--accent-soft); overflow: hidden; }
+.progress > span { display: block; height: 100%; background: var(--accent); }
+
+.tabs { display: flex; background: var(--ground); border-radius: 7px; padding: 3px; gap: 2px; }
+.tab {
+  height: 28px; padding: 0 12px; border: none; border-radius: 5px; background: transparent;
+  color: var(--muted); font: inherit; font-size: 12.5px; cursor: pointer;
+}
+.tab[data-active='true'] { background: var(--surface); color: var(--ink); font-weight: 600; }
+
+/* ── จอแคบ ────────────────────────────────────────────────
+   768: ตัดคอลัมน์รายละเอียดทิ้ง วันเป็นแถบแนวนอน เป้าแตะ 44px
+   390: การ์ดเรียงแนวตั้ง ปุ่มหลักลอยอยู่ล่างในระยะนิ้วโป้ง */
+
+/* จอแคบ: แผงรายละเอียดกลายเป็น "แผงเลื่อนขึ้น" ไม่ใช่หายไปทั้งแผง
+   เดิมสั่ง display:none ตรงนี้ ผลคือมือถือแตะโพสต์แล้วแก้/เลื่อน/ยกเลิกอะไรไม่ได้เลย
+   ต้องรู้ URL /post/<id> เองถึงจะเข้าถึงได้ — ซึ่งไม่มีทางรู้ */
+@media (max-width: 1100px) {
+  .aside {
+    position: fixed; left: 0; right: 0; bottom: 0; top: auto;
+    width: auto; max-height: 82vh; overflow-y: auto;
+    border-left: none; border-top: 1px solid var(--line);
+    border-radius: 14px 14px 0 0;
+    padding: 8px 14px calc(18px + env(safe-area-inset-bottom));
+    box-shadow: 0 -8px 32px rgb(16 19 26 / 18%);
+    z-index: 40;
+  }
+  /* เปิดเฉพาะตอนผู้ใช้แตะโพสต์เอง — ไม่ใช่ค้างเปิดเพราะระบบเลือกโพสต์แรกให้ */
+  .aside:not([data-picked='true']) { display: none; }
+  .sheet-head { display: flex; align-items: center; }
+}
+
+/* หัวแผงมีเฉพาะจอแคบ */
+.sheet-head { display: none; padding-bottom: 6px; }
+.sheet-grip {
+  flex-grow: 1; height: 4px; max-width: 38px; margin: 4px auto 8px;
+  border-radius: 999px; background: var(--line);
+}
+.sheet-close {
+  width: var(--tap); min-height: var(--tap); padding: 0; flex: none; margin-left: auto;
+}
+
+@media (max-width: 860px) {
+  .shell { flex-direction: column; }
+  .rail {
+    width: auto; flex-direction: row; overflow-x: auto; gap: 8px;
+    padding: 12px 14px; border-right: none; border-bottom: 1px solid var(--line);
+  }
+  .rail .rail-head, .rail .rail-foot { display: none; }
+  .day {
+    flex-direction: column; align-items: center; gap: 4px; width: 64px; min-height: var(--tap);
+    padding: 8px 0; border-radius: var(--r); border-left: none;
+    border: 1px solid var(--line); flex: none;
+  }
+  .day[data-active='true'] { border-color: var(--accent); }
+  .day .d-dow { width: auto; }
+  .btn { min-height: 40px; }
+  .center { padding: 14px; }
+}
+
+@media (max-width: 560px) {
+  .card { align-items: flex-start; }
+  .card .accent { display: none; }
+  .card .time { font-size: 13px; }
+  .btn { min-height: var(--tap); }
+  .topbar { padding: 8px 14px; }
+  .banner { padding: 10px 14px; }
+
+  /* เป้าแตะที่เหลือ — สามอันนี้เป็น "เมนูจริง" ไม่ใช่ป้ายสถานะ
+     .tab = ตัวกรองคลังรูป/เลือกเพจ · .slot-x = ลบช่วงเวลา (เดิมกว้าง ~15px)
+     .pill-link = ลิงก์เปิดไฟล์แต่ละสัดส่วน */
+  .tab { min-height: var(--tap); }
+  .slot-x { width: var(--tap); height: var(--tap); }
+  .pill-link { min-height: var(--tap); padding-left: 14px; padding-right: 14px; }
+}
+
+/* ── หน้าเขียนโพสต์ ───────────────────────────────────────── */
+
+.composer { display: grid; grid-template-columns: 560px 1fr; min-height: 100vh; }
+.composer-form {
+  background: var(--surface); border-right: 1px solid var(--line);
+  padding: 20px; display: flex; flex-direction: column; gap: 22px;
+}
+.composer-preview {
+  padding: 28px; display: flex; flex-direction: column; align-items: center; gap: 20px;
+  background: var(--ground);
+}
+
+.target {
+  display: flex; align-items: center; gap: 10px; padding: 11px 13px; flex-grow: 1;
+  min-width: 220px; border-radius: var(--r); cursor: pointer; text-align: left;
+  border: 1px solid var(--line); background: var(--surface); color: inherit; font: inherit;
+}
+.target[data-active='true'] { border-color: var(--accent); background: var(--accent-soft); }
+.target-icon {
+  width: 28px; height: 28px; border-radius: 7px; flex: none; color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 11px; background: var(--accent);
+}
+.target-icon[data-platform='instagram'] { background: var(--partial); }
+.target-check {
+  width: 18px; height: 18px; border-radius: 50%; flex: none; color: #fff;
+  display: flex; align-items: center; justify-content: center; background: var(--line);
+}
+.target[data-active='true'] .target-check { background: var(--accent); }
+
+.ai-box {
+  border: 1px solid var(--accent-line); border-radius: var(--r); background: var(--surface-2);
+  padding: 12px; display: flex; flex-direction: column; gap: 10px;
+}
+.draft {
+  display: flex; flex-direction: column; gap: 7px; padding: 11px 12px; cursor: pointer;
+  border-radius: var(--r-sm); background: var(--surface); border: 1px solid var(--line);
+  font: inherit; color: inherit; text-align: left; font-size: 13.5px; line-height: 1.6;
+}
+.draft:hover { border-color: var(--line-strong); }
+
+.pick-thumb {
+  width: 108px; height: 108px; object-fit: cover; flex: none;
+  border-radius: var(--r); border: 1px solid var(--line);
+}
+.pick-empty {
+  display: flex; align-items: center; justify-content: center;
+  background: var(--surface-2); color: var(--muted);
+}
+
+.when {
+  display: flex; align-items: center; gap: 8px; padding: 9px 12px;
+  border: 1px solid var(--line); border-radius: var(--r-sm); color: var(--muted);
+}
+
+.msg { margin: 0; padding: 9px 12px; border-radius: var(--r-sm); font-size: 13px; }
+.msg.ok { background: var(--ok-bg); color: var(--ok); }
+.msg.bad { background: var(--bad-bg); color: var(--bad); }
+.msg.warn { background: var(--warn-bg); color: var(--warn); }
+
+/* ตัวอย่างโพสต์ที่จะขึ้นจริง */
+.mock {
+  width: 480px; max-width: 100%; background: var(--surface);
+  border: 1px solid var(--line); border-radius: var(--r-lg); overflow: hidden;
+}
+.mock-ig { width: 400px; }
+.mock-head { display: flex; align-items: center; gap: 10px; padding: 12px 14px; }
+.avatar {
+  width: 36px; height: 36px; border-radius: 50%; flex: none; color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 12px; background: var(--accent);
+}
+.avatar[data-platform='instagram'] { background: var(--partial); }
+.mock-cap { margin: 0; padding: 0 14px 12px; font-size: 14px; line-height: 1.6; white-space: pre-wrap; }
+.mock-ig .mock-cap { padding: 12px 13px; }
+.mock-wide, .mock-square {
+  background: var(--surface-2); display: flex; align-items: center; justify-content: center;
+}
+.mock-wide { height: 300px; }
+.mock-square { aspect-ratio: 4 / 5; }
+.mock-wide img, .mock-square img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.mock-noimg { color: var(--muted); font-size: 13px; }
+
+@media (max-width: 1080px) {
+  .composer { grid-template-columns: 1fr; }
+  .composer-form { border-right: none; border-bottom: 1px solid var(--line); }
+  .composer-preview { padding: 20px 14px 40px; }
+}
+
+.only-wide { display: inline; }
+@media (max-width: 700px) { .only-wide { display: none; } }
+
+/* ── หน้าตั้งค่า ──────────────────────────────────────────── */
+
+.settings {
+  padding: 20px; display: grid; gap: 18px; align-items: start;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  max-width: 1180px; margin: 0 auto;
+}
+@media (max-width: 900px) {
+  .settings { grid-template-columns: 1fr; padding: 14px; }
+}
+code {
+  font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12.5px;
+  background: var(--ground); padding: 1px 5px; border-radius: 4px;
+}
+
+/* ชื่อเพจในชิปย่อด้วย CSS ไม่ใช่ตัดข้อความทิ้งใน JS */
+.chip-page { max-width: 13ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* แถบปุ่มลงมือ ค้างอยู่ล่างจอเสมอ — บนมือถือฟอร์มยาว ไม่ต้องเลื่อนกลับไปหาปุ่ม */
+.actions-bar {
+  position: sticky; bottom: 0; z-index: 2;
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 12px 0; margin-top: auto;
+  background: var(--surface); border-top: 1px solid var(--line);
+}
+.btn[data-chosen='true'] {
+  border-color: var(--accent); background: var(--accent-soft);
+  color: var(--accent); font-weight: 600;
+}
+
+/* ── แจ้งเตือนและข้อความยืนยันผล ───────────────────────────── */
+
+/* ข้อความยืนยันผลหลังกดปุ่ม — ลอยล่างขวาบนจอใหญ่ ไม่บังเนื้อหา
+   บนมือถือขึ้นบนสุดแทน เพราะมุมล่างคือที่อยู่ของนิ้วโป้ง */
+.flash {
+  position: fixed; right: 20px; bottom: 20px; z-index: 50;
+  display: flex; align-items: flex-start; gap: 10px;
+  max-width: min(420px, calc(100vw - 40px));
+  padding: 12px 14px; border-radius: var(--r);
+  font-size: 13.5px; line-height: 1.55;
+  box-shadow: 0 6px 24px rgba(16, 19, 26, .16);
+  border: 1px solid transparent;
+}
+.flash-ok   { background: var(--ok-bg); color: var(--ok); border-color: var(--ok); }
+.flash-warn { background: var(--warn-bg); color: var(--warn); border-color: var(--warn); }
+.flash-bad  { background: var(--bad-bg); color: var(--bad); border-color: var(--bad); }
+.flash-close {
+  background: none; border: none; color: inherit; cursor: pointer; padding: 2px;
+  display: flex; flex: none; opacity: .7; border-radius: 4px;
+}
+.flash-close:hover { opacity: 1; }
+
+@media (max-width: 700px) {
+  .flash { right: 12px; left: 12px; bottom: auto; top: 12px; max-width: none; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .flash { animation: flash-in .18s ease-out; }
+  @keyframes flash-in { from { opacity: 0; transform: translateY(6px); } }
+}
+
+.banner-warning { background: var(--partial-bg); border-color: var(--partial-line);
+                  color: var(--partial-ink); }
+.banner-info    { background: var(--accent-soft); border-color: var(--accent-line);
+                  color: var(--ink); }
+
+.badge-count {
+  min-width: 17px; height: 17px; padding: 0 5px; border-radius: 999px;
+  background: var(--bad); color: #fff; font-size: 11px; font-weight: 700;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+
+.alerts { max-width: 780px; margin: 0 auto; padding: 20px 16px 60px;
+          display: flex; flex-direction: column; gap: 8px; }
+.alerts-head { margin: 14px 0 2px; font-size: 12px; font-weight: 600;
+               color: var(--muted); letter-spacing: .04em; }
+.alert-row {
+  display: flex; align-items: flex-start; gap: 12px; padding: 13px 15px;
+  background: var(--surface); border: 1px solid var(--line);
+  border-left: 3px solid var(--line-strong); border-radius: var(--r);
+}
+.alert-row[data-read='true'] { opacity: .62; }
+.alert-critical { border-left-color: var(--bad); }
+.alert-warning  { border-left-color: var(--partial); }
+.alert-info     { border-left-color: var(--accent); }
+.alert-icon { flex: none; margin-top: 2px; color: var(--muted); }
+.alert-critical .alert-icon { color: var(--bad); }
+.alert-warning .alert-icon  { color: var(--partial); }
+
+/* ── ตารางเวลาประจำ ───────────────────────────────────────── */
+
+.slot-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; }
+@media (max-width: 760px) { .slot-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.slot-day {
+  display: flex; flex-direction: column; gap: 6px; align-items: flex-start;
+  padding: 10px; border: 1px solid var(--line); border-radius: var(--r); min-height: 84px;
+}
+.slot-day[data-empty='true'] { background: var(--surface-2); }
+.slot-dayname { font-size: 12px; font-weight: 600; color: var(--muted); }
+.slot-chip {
+  display: inline-flex; align-items: center; gap: 4px; padding: 3px 4px 3px 8px;
+  border-radius: 999px; background: var(--accent-soft); color: var(--accent);
+  font-size: 12.5px; font-weight: 600;
+}
+.slot-x {
+  background: none; border: none; color: inherit; cursor: pointer; padding: 2px;
+  display: flex; opacity: .65; border-radius: 50%;
+}
+.slot-x:hover { opacity: 1; }
+.slot-add { display: flex; flex-direction: column; gap: 8px;
+            border-top: 1px solid var(--line); padding-top: 14px; }
+.slot-pick {
+  display: inline-flex; align-items: center; gap: 5px; padding: 6px 10px;
+  border: 1px solid var(--line); border-radius: var(--r-sm); font-size: 13px; cursor: pointer;
+}
+.slot-pick:has(input:checked) {
+  border-color: var(--accent); background: var(--accent-soft); color: var(--accent);
+  font-weight: 600;
+}
+.slot-pick input { width: auto; }
+
+/* ── ปฏิทินรายเดือน ───────────────────────────────────────── */
+
+.month { max-width: 1180px; margin: 0 auto; padding: 18px 20px 40px; }
+.month-head { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
+.month-grid {
+  display: grid; grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: var(--r);
+  overflow: hidden;
+}
+.month-dow {
+  background: var(--surface-2); padding: 8px 10px; font-size: 12px;
+  font-weight: 600; color: var(--muted); text-align: center;
+}
+.month-cell {
+  background: var(--surface); min-height: 92px; padding: 8px 10px;
+  display: flex; flex-direction: column; gap: 6px; color: inherit; text-decoration: none;
+}
+.month-cell:hover { background: var(--surface-2); text-decoration: none; }
+.month-cell[data-dim='true'] { opacity: .45; }
+.month-cell[data-today='true'] { box-shadow: inset 0 0 0 2px var(--accent); }
+.month-date { font-size: 14px; font-weight: 600; }
+.month-count {
+  font-size: 12px; font-weight: 600; padding: 2px 7px; border-radius: 999px;
+  align-self: flex-start; background: var(--ok-bg); color: var(--ok);
+}
+.month-count[data-worst='failed']  { background: var(--bad-bg); color: var(--bad); }
+.month-count[data-worst='partial'] { background: var(--partial-bg); color: var(--partial); }
+.month-count[data-worst='missed']  { background: var(--warn-bg); color: var(--warn); }
+.month-count[data-worst='pending'], .month-count[data-worst='publishing'] {
+  background: var(--accent-soft); color: var(--accent);
+}
+.month-free { font-size: 12px; color: var(--muted); }
+
+@media (max-width: 700px) {
+  .month { padding: 12px; }
+  .month-cell { min-height: 68px; padding: 6px; }
+  .month-count, .month-free { font-size: 11px; }
+}
+
+/* ── ฟีด Instagram ────────────────────────────────────────── */
+
+.grid-page { max-width: 620px; margin: 0 auto; padding: 20px 16px 60px;
+             display: flex; flex-direction: column; gap: 16px; }
+.ig-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 3px; }
+.ig-cell {
+  position: relative; aspect-ratio: 4 / 5; overflow: hidden; display: block;
+  background: var(--surface-2);
+}
+.ig-cell img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ig-cell[data-pending='true'] img { opacity: .55; }
+.ig-cell[data-pending='true']::after {
+  content: ''; position: absolute; inset: 2px;
+  border: 2px dashed var(--accent); border-radius: 4px; pointer-events: none;
+}
+.ig-badge {
+  position: absolute; left: 5px; bottom: 5px;
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 7px; border-radius: 999px;
+  background: var(--accent); color: #fff; font-size: 11px; font-weight: 600;
+}
+.ig-badge-bad { background: var(--bad); }
+.ig-noimg { display: flex; align-items: center; justify-content: center; height: 100%;
+            color: var(--muted); font-size: 12px; }
+
+/* ── หลายรูปต่อโพสต์ (carousel) ────────────────────────────── */
+
+.media-strip { display: flex; gap: 8px; flex-wrap: wrap; }
+.media-thumb {
+  position: relative; width: 74px; height: 74px; padding: 0; flex: none; cursor: pointer;
+  border: 1px solid var(--line); border-radius: var(--r-sm); overflow: hidden; background: none;
+}
+.media-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.media-thumb[data-active='true'] {
+  border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft);
+}
+.media-num {
+  position: absolute; left: 3px; top: 3px; min-width: 17px; height: 17px; padding: 0 4px;
+  border-radius: 4px; background: rgba(16,19,26,.72); color: #fff;
+  font-size: 11px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.mock-square, .mock-wide { position: relative; }
+.mock-count {
+  position: absolute; right: 10px; top: 10px; padding: 3px 9px; border-radius: 999px;
+  background: rgba(16,19,26,.72); color: #fff; font-size: 12px; font-weight: 600;
+}
+.mock-dots { display: flex; gap: 5px; justify-content: center; padding: 9px 0 2px; }
+.mock-dots span {
+  width: 6px; height: 6px; border-radius: 50%; background: var(--line-strong); display: block;
+}
+.mock-dots span[data-on='true'] { background: var(--accent); }
+
+/* ป้ายจำนวนรูปบนรูปย่อในคิว */
+.thumb-wrap { position: relative; flex: none; }
+.thumb-count {
+  position: absolute; right: -4px; top: -4px; min-width: 18px; height: 18px; padding: 0 5px;
+  border-radius: 999px; background: var(--ink); color: var(--ground);
+  font-size: 11px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+}
+
+/* ── ห้องทำโปสเตอร์ ───────────────────────────────────────── */
+
+.studio { display: grid; grid-template-columns: 560px 1fr; min-height: 100vh; }
+.studio-form {
+  background: var(--surface); border-right: 1px solid var(--line);
+  padding: 20px; display: flex; flex-direction: column; gap: 22px;
+}
+.studio-preview {
+  padding: 28px; display: flex; flex-direction: column; align-items: center; gap: 18px;
+  background: var(--ground);
+}
+@media (max-width: 1080px) {
+  .studio { grid-template-columns: 1fr; }
+  .studio-form { border-right: none; border-bottom: 1px solid var(--line); }
+}
+
+.tpl-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+@media (max-width: 620px) { .tpl-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.tpl {
+  display: flex; flex-direction: column; gap: 5px; padding: 10px; cursor: pointer;
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--r);
+  font: inherit; color: inherit; text-align: left;
+}
+.tpl:hover { border-color: var(--line-strong); }
+.tpl[data-active='true'] {
+  border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.tpl-swatch {
+  height: 44px; border-radius: var(--r-sm); position: relative; overflow: hidden;
+}
+.tpl-swatch > span {
+  position: absolute; left: 8px; bottom: 8px; width: 30px; height: 12px; border-radius: 3px;
+  display: block;
+}
+.tpl-name { font-size: 13.5px; font-weight: 600; }
+.tpl-hint { font-size: 12px; color: var(--muted); line-height: 1.45; }
+
+.poster-out {
+  max-width: 100%; max-height: 62vh; border-radius: var(--r);
+  border: 1px solid var(--line); box-shadow: 0 10px 30px rgba(16,19,26,.12);
+}
+.poster-placeholder {
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  padding: 60px 20px; color: var(--muted);
+  border: 1px dashed var(--line-strong); border-radius: var(--r-lg); width: 100%;
+}
+.poster-recent { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
+.poster-chip {
+  width: 64px; height: 80px; padding: 0; cursor: pointer; overflow: hidden;
+  border: 1px solid var(--line); border-radius: var(--r-sm); background: none;
+}
+.poster-chip:hover { border-color: var(--accent); }
+.poster-chip img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+/* ── งานรอตรวจ ────────────────────────────────────────────── */
+
+.approval-row {
+  display: flex; gap: 14px; padding: 14px 16px; align-items: flex-start;
+  background: var(--surface); border: 1px solid var(--line);
+  border-left: 3px solid var(--accent); border-radius: var(--r);
+}
+.approval-thumb {
+  width: 88px; height: 88px; object-fit: cover; border-radius: var(--r-sm);
+  border: 1px solid var(--line); display: block;
+}
+@media (max-width: 560px) {
+  .approval-row { flex-direction: column; }
+  .approval-thumb { width: 100%; height: 160px; }
+}
+
+/* ── คลังรูป ──────────────────────────────────────────────── */
+
+.library { max-width: 1180px; margin: 0 auto; padding: 20px 16px 60px;
+           display: flex; flex-direction: column; gap: 18px; }
+.lib-grid {
+  display: grid; gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+}
+.lib-card {
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg);
+  overflow: hidden; display: flex; flex-direction: column;
+}
+.lib-img { position: relative; display: block; background: var(--surface-2); aspect-ratio: 4/5; }
+.lib-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.lib-tag {
+  position: absolute; left: 8px; top: 8px; padding: 3px 9px; border-radius: 999px;
+  background: var(--accent); color: #fff; font-size: 11.5px; font-weight: 600;
+}
+.lib-meta { padding: 12px 13px 13px; display: flex; flex-direction: column; gap: 7px; }
+.lib-actions { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 2px; }
+
+/* ── ลากเลื่อนในปฏิทิน ────────────────────────────────────── */
+
+.month-cell[data-over='true'] {
+  background: var(--accent-soft);
+  box-shadow: inset 0 0 0 2px var(--accent);
+}
+.month-post {
+  display: flex; align-items: baseline; gap: 5px; padding: 3px 6px;
+  border-radius: 4px; font-size: 11.5px; cursor: grab;
+  background: var(--surface-2); border-left: 3px solid var(--line-strong);
+  overflow: hidden;
+}
+.month-post[draggable='false'] { cursor: default; opacity: .75; }
+.month-post[data-dragging='true'] { opacity: .4; }
+.month-post:active { cursor: grabbing; }
+.month-post[data-tone='posted']     { border-left-color: var(--ok); }
+.month-post[data-tone='partial']    { border-left-color: var(--partial); }
+.month-post[data-tone='failed']     { border-left-color: var(--bad); }
+.month-post[data-tone='missed']     { border-left-color: var(--warn); }
+.month-post[data-tone='publishing'] { border-left-color: var(--accent); }
+.month-post-time { font-weight: 600; flex: none; }
+.month-post-cap {
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted);
+}
+.month-cell { min-height: 118px; }
+a.month-date:hover { text-decoration: underline; }
+
+@media (max-width: 700px) {
+  .month-cell { min-height: 84px; }
+  .month-post-cap { display: none; }
+}
+
+/* ── เลือกกรอบครอป ────────────────────────────────────────── */
+
+.crop { display: grid; grid-template-columns: 1fr 380px; min-height: 100vh; }
+.crop-left {
+  background: var(--surface); border-right: 1px solid var(--line);
+  padding: 20px; display: flex; flex-direction: column; gap: 20px;
+}
+.crop-right {
+  padding: 24px; display: flex; flex-direction: column; align-items: center; gap: 16px;
+  background: var(--ground);
+}
+@media (max-width: 900px) {
+  .crop { grid-template-columns: 1fr; }
+  .crop-left { border-right: none; border-bottom: 1px solid var(--line); }
+}
+
+.crop-canvas {
+  position: relative; cursor: crosshair; border-radius: var(--r);
+  overflow: hidden; border: 1px solid var(--line); background: var(--surface-2);
+  max-width: 100%; align-self: flex-start;
+}
+.crop-canvas img { display: block; max-width: 100%; max-height: 58vh; user-select: none; }
+.crop-frame {
+  position: absolute; border: 2px solid var(--accent); border-radius: 3px;
+  box-shadow: 0 0 0 9999px rgba(8, 10, 16, .45); pointer-events: none;
+}
+.crop-dot {
+  position: absolute; width: 12px; height: 12px; margin: -6px 0 0 -6px;
+  border-radius: 50%; background: var(--accent); border: 2px solid #fff;
+  pointer-events: none; box-shadow: 0 1px 4px rgba(0,0,0,.4);
+}
+.crop-preview {
+  width: 100%; max-width: 320px; overflow: hidden; border-radius: var(--r);
+  border: 1px solid var(--line); background: var(--surface-2);
+}
+.crop-preview img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+/* ── ผลตอบรับ ─────────────────────────────────────────────── */
+
+.insight-row {
+  display: flex; gap: 14px; padding: 14px 16px; align-items: flex-start;
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--r);
+}
+@media (max-width: 560px) { .insight-row { flex-direction: column; } }
+
+.metric-grid {
+  display: grid; gap: 8px;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+.metric-cell {
+  padding: 9px 11px; border-radius: var(--r-sm); background: var(--surface-2);
+  display: flex; flex-direction: column; gap: 5px;
+}
+.metric-cell[data-empty='true'] { opacity: .6; }
+.metric-label { font-size: 12px; font-weight: 600; color: var(--muted); }
+.metric-nums {
+  display: flex; gap: 10px; flex-wrap: wrap; font-size: 12.5px; color: var(--muted);
+}
+.metric-nums b { color: var(--ink); font-size: 14px; }
+
+/* แผงให้ AI สร้างฉากในหน้าทำโปสเตอร์ — แยกออกจากช่องอัปโหลดให้เห็นว่าเป็นคนละทาง */
+.ai-scene {
+  display: grid;
+  gap: 7px;
+  margin-top: 10px;
+  padding: 12px;
+  border: 1px dashed var(--line);
+  border-radius: 10px;
+  background: var(--surface-2);
+}
+.ai-scene a { color: inherit; }
+
+/* ── ปฏิทินเดือน: เลื่อนวันด้วยการแตะ ────────────────────────
+   ลาก HTML5 ไม่ทำงานบนจอสัมผัส ปุ่มนี้คือทางเดียวที่มือถือใช้ได้ */
+.month-move {
+  margin-left: auto; flex: none;
+  width: 22px; height: 22px; padding: 0; border-radius: var(--r-sm);
+  border: 1px solid transparent; background: transparent; color: var(--muted);
+  display: inline-flex; align-items: center; justify-content: center; cursor: pointer;
+}
+.month-post:hover .month-move, .month-move:focus-visible {
+  border-color: var(--line); background: var(--surface); color: var(--ink);
+}
+
+.month-sheet-back {
+  position: fixed; inset: 0; z-index: 50;
+  background: rgb(16 19 26 / 45%);
+  display: flex; align-items: flex-end; justify-content: center;
+  border: none; padding: 0;
+}
+.month-sheet {
+  width: 100%; max-width: 460px; background: var(--surface);
+  border-radius: 14px 14px 0 0; border: 1px solid var(--line);
+  padding: 10px 14px calc(18px + env(safe-area-inset-bottom));
+  display: flex; flex-direction: column; gap: 10px;
+}
+.month-sheet-days { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; }
+.month-sheet-days .btn { min-height: 52px; flex-direction: column; gap: 1px; }
+
+@media (min-width: 861px) {
+  .month-sheet-back { align-items: center; }
+  .month-sheet { border-radius: var(--r-lg); }
+}
+
+/* สถานะในปฏิทินต้องอ่านออกโดยไม่พึ่งสี — เดิมมีแต่เส้นขอบซ้าย 3px */
+.month-post-icon { flex: none; display: inline-flex; opacity: .85; }

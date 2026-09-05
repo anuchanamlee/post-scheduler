@@ -1,0 +1,98 @@
+name: post-scheduler
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app
+      POSTGRES_DB: scheduler
+    ports:
+      - "55432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app -d scheduler"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  # ตั้งฐานข้อมูล + ข้อมูลตัวอย่าง แล้วจบ (ไม่ค้างเป็น service)
+  migrate:
+    build:
+      context: .
+      target: base
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file: .env
+    environment:
+      DATABASE_URL: postgres://app:app@db:5432/scheduler
+    volumes:
+      - .:/app
+      - node-modules:/app/node_modules
+      - storage:/data/storage
+    command: sh -c "npm run migrate && npm run seed"
+
+  web:
+    build:
+      context: .
+      target: base
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    env_file: .env
+    environment:
+      DATABASE_URL: postgres://app:app@db:5432/scheduler
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/app
+      - node-modules:/app/node_modules
+      - storage:/data/storage
+    command: npm run dev
+
+  # ชั้น "คนโพสต์" แยก process จากเว็บโดยตั้งใจ
+  # เว็บล่มไม่ทำให้คิวหยุด และคิวพังก็เห็นได้ว่าเป็นคนละส่วนกัน
+  worker:
+    build:
+      context: .
+      target: base
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    env_file: .env
+    environment:
+      DATABASE_URL: postgres://app:app@db:5432/scheduler
+    volumes:
+      - .:/app
+      - node-modules:/app/node_modules
+      - storage:/data/storage
+    command: npm run worker
+
+  # S3 จำลองสำหรับทดสอบ driver s3 โดยไม่ต้องมีบัญชีคลาวด์
+  #   docker compose --profile s3 up -d minio
+  # แล้วตั้ง STORAGE_DRIVER=s3 ใน .env
+  minio:
+    image: minio/minio:latest
+    profiles: ["s3"]
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  db-data:
+  minio-data:
+  node-modules:
+  storage:

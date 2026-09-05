@@ -1,0 +1,338 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+  <style>
+    body { margin: 0; font-family: Sarabun, 'Segoe UI', system-ui, sans-serif;
+           background: #f1f3f7; color: #10131a; font-size: 14px; }
+    a { color: #3b3fd8; text-decoration: none; } a:hover { color: #2a2ea8; }
+    * { box-sizing: border-box; }
+    .num { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+    .btn { height: 32px; padding: 0 14px; border-radius: 6px; border: 1px solid #dfe3ec;
+           background: #fff; color: #10131a; font: inherit; font-size: 13px; cursor: pointer;
+           display: inline-flex; align-items: center; gap: 6px; }
+    .btn:hover { border-color: #b9c0d0; }
+    .btn.primary { background: #3b3fd8; border-color: #3b3fd8; color: #fff; font-weight: 600; }
+    .btn.primary:hover { background: #2f33bd; }
+    .field { font-size: 12px; font-weight: 600; color: #626a7c; margin-bottom: 6px; }
+    .draft:hover { border-color: #b9c0d0; }
+    /* โฟกัสคีย์บอร์ดต้องเห็นได้เสมอ */
+    button:focus-visible, [role="button"]:focus-visible, a:focus-visible {
+      outline: 2px solid #3b3fd8; outline-offset: 2px; border-radius: 6px; }
+    @media (prefers-reduced-motion: no-preference) {
+      .btn, .card, .day { transition: border-color .12s ease, background-color .12s ease; } }
+  </style>
+</helmet>
+
+<div style="display: flex; height: 900px">
+
+  <!-- ฝั่งซ้าย: ทุกอย่างที่ต้องกรอก เรียงตามลำดับที่คนคิดจริง -->
+  <div style="width: 560px; flex: none; background: #fff; border-right: 1px solid #dfe3ec;
+              display: flex; flex-direction: column">
+
+    <div style="display: flex; align-items: center; gap: 12px; height: 56px; padding: 0 20px;
+                border-bottom: 1px solid #dfe3ec; flex: none">
+      <button class="btn" style="width: 32px; padding: 0; justify-content: center">
+        <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M12 4l-6 6 6 6"/></svg>
+      </button>
+      <span style="font-weight: 600; font-size: 15px">โพสต์ใหม่</span>
+      <div style="flex-grow: 1"></div>
+      <span class="num" style="font-size: 12.5px; color: {{countColor}}">{{count}}</span>
+    </div>
+
+    <div style="flex-grow: 1; overflow: auto; padding: 20px; display: flex;
+                flex-direction: column; gap: 22px">
+
+      <!-- 1. ปลายทาง มาก่อน เพราะมันเปลี่ยนกติกาของทุกอย่างข้างล่าง -->
+      <div>
+        <div class="field">โพสต์ลงที่ไหน</div>
+        <div style="display: flex; gap: 8px">
+          <sc-for list="{{pages}}" as="pg" hint-placeholder-count="2">
+            <div role="button" tabindex="0" aria-pressed="{{pg.pressed}}" style="{{pg.style}}" onClick="{{pg.toggle}}">
+              <span style="{{pg.iconWrap}}">{{pg.icon}}</span>
+              <div style="display: flex; flex-direction: column; gap: 1px; min-width: 0">
+                <span style="font-size: 13px; font-weight: 500">{{pg.name}}</span>
+                <span style="font-size: 12px; color: #626a7c">{{pg.handle}}</span>
+              </div>
+              <div style="flex-grow: 1"></div>
+              <span style="{{pg.check}}">
+                <svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="#fff" stroke-width="2.6">
+                  <path d="M4 10.5l4 4 8-9"/></svg>
+              </span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+      <!-- 2. แคปชั่น พร้อมผู้ช่วยที่อยู่ในที่เดียวกัน ไม่ต้องเลื่อนไปมา -->
+      <div>
+        <div style="display: flex; align-items: center; margin-bottom: 6px">
+          <span class="field" style="margin: 0">แคปชั่น</span>
+          <div style="flex-grow: 1"></div>
+          <button class="btn" style="height: 26px; font-size: 12.5px; color: #3b3fd8;
+                  border-color: #cfd4fb; background: #f6f7fe" onClick="{{toggleAi}}">
+            <svg width="13" height="13" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6">
+              <path d="M10 2.5l1.9 4.6 4.6 1.9-4.6 1.9L10 15.5 8.1 10.9 3.5 9l4.6-1.9L10 2.5z"/></svg>
+            ให้ AI ช่วยร่าง
+          </button>
+        </div>
+
+        <div style="border: 1px solid #dfe3ec; border-radius: 8px; overflow: hidden">
+          <div style="padding: 12px 14px; font-size: 14px; line-height: 1.65; min-height: 96px;
+                      white-space: pre-line">{{caption}}</div>
+          <div style="display: flex; align-items: center; gap: 10px; padding: 7px 12px;
+                      background: #f7f8fb; border-top: 1px solid #eceef4">
+            <span class="num" style="font-size: 12px; color: #626a7c">{{captionLen}}</span>
+            <div style="flex-grow: 1"></div>
+            <span style="font-size: 12px; color: #626a7c">โทน: {{tone}}</span>
+          </div>
+        </div>
+
+        <sc-if value="{{aiOpen}}" hint-placeholder-val="{{ true }}">
+          <div style="margin-top: 10px; border: 1px solid #cfd4fb; border-radius: 8px;
+                      background: #fafbff; padding: 12px; display: flex; flex-direction: column; gap: 10px">
+            <div style="display: flex; align-items: center; gap: 8px">
+              <span style="font-size: 12.5px; font-weight: 600; color: #3b3fd8">ร่างตามโทนของเพจร้านตัวอย่าง</span>
+              <div style="flex-grow: 1"></div>
+              <span class="num" style="font-size: 12px; color: #626a7c">ใช้ไป 12/300 ครั้งเดือนนี้</span>
+            </div>
+            <sc-for list="{{drafts}}" as="d" hint-placeholder-count="3">
+              <div class="draft" role="button" tabindex="0" style="{{d.style}}" onClick="{{d.use}}">
+                <div style="font-size: 13.5px; line-height: 1.6">{{d.text}}</div>
+                <span style="{{d.tag}}">{{d.tagText}}</span>
+              </div>
+            </sc-for>
+            <button class="btn" style="align-self: flex-start; height: 28px; font-size: 12.5px">
+              ร่างใหม่อีกชุด</button>
+          </div>
+        </sc-if>
+      </div>
+
+      <!-- 3. รูป พร้อมสถานะสัดส่วนต่อแพลตฟอร์ม รู้ก่อนโพสต์ ไม่ใช่รู้ตอนล้ม -->
+      <div>
+        <div class="field">รูป</div>
+        <div style="display: flex; gap: 12px">
+          <img src="demo.jpg" alt="" style="width: 108px; height: 108px; object-fit: cover;
+               border-radius: 8px; border: 1px solid #dfe3ec; flex: none">
+          <div style="display: flex; flex-direction: column; gap: 8px; min-width: 0; flex-grow: 1">
+            <div class="num" style="font-size: 12.5px; color: #626a7c">1600 × 1200 · 248 KB</div>
+            <sc-for list="{{ratios}}" as="r" hint-placeholder-count="2">
+              <div style="display: flex; align-items: center; gap: 7px; font-size: 12.5px">
+                <span style="{{r.dot}}"></span>
+                <span style="color: {{r.color}}">{{r.text}}</span>
+              </div>
+            </sc-for>
+            <div style="display: flex; gap: 7px; margin-top: 2px">
+              <button class="btn" style="height: 28px; font-size: 12.5px">ครอปเอง</button>
+              <button class="btn" style="height: 28px; font-size: 12.5px">ใส่ข้อความทับ</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. เวลา: ทางลัดก่อน ปฏิทินไว้ทีหลัง -->
+      <div>
+        <div class="field">เวลาที่จะโพสต์</div>
+        <div style="display: flex; gap: 7px; flex-wrap: wrap">
+          <sc-for list="{{slots}}" as="s" hint-placeholder-count="4">
+            <button class="btn" style="{{s.style}}" onClick="{{s.pick}}">{{s.label}}</button>
+          </sc-for>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px; margin-top: 10px;
+                    padding: 9px 12px; border: 1px solid #dfe3ec; border-radius: 7px">
+          <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="#626a7c" stroke-width="1.6">
+            <circle cx="10" cy="10" r="7.5"/><path d="M10 5.5V10l3 2"/></svg>
+          <span class="num" style="font-size: 13.5px; font-weight: 500">{{when}}</span>
+          <span style="font-size: 12.5px; color: #626a7c">{{whenRelative}}</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 10px; padding: 14px 20px;
+                border-top: 1px solid #dfe3ec; flex: none">
+      <button class="btn">บันทึกเป็นร่าง</button>
+      <div style="flex-grow: 1"></div>
+      <button class="btn primary" style="height: 36px; padding: 0 20px">เพิ่มเข้าคิว</button>
+    </div>
+  </div>
+
+  <!-- ฝั่งขวา: เห็นของจริงก่อนกด ไม่ต้องเดา -->
+  <div style="flex-grow: 1; display: flex; flex-direction: column; align-items: center;
+              padding: 28px; overflow: auto; background: #f1f3f7">
+    <div style="display: flex; background: #fff; border: 1px solid #dfe3ec; border-radius: 8px;
+                padding: 3px; gap: 2px; margin-bottom: 22px">
+      <sc-for list="{{previewTabs}}" as="tb" hint-placeholder-count="2">
+        <button class="btn" style="{{tb.style}}" onClick="{{tb.pick}}">{{tb.label}}</button>
+      </sc-for>
+    </div>
+
+    <!-- ตัวอย่างโพสต์บน Facebook -->
+    <sc-if value="{{isFb}}" hint-placeholder-val="{{ true }}">
+      <div style="width: 480px; background: #fff; border: 1px solid #dfe3ec; border-radius: 10px;
+                  overflow: hidden">
+        <div style="display: flex; align-items: center; gap: 10px; padding: 12px 14px">
+          <div style="width: 38px; height: 38px; border-radius: 50%; background: #3b3fd8; color: #fff;
+                      display: flex; align-items: center; justify-content: center; font-weight: 700;
+                      font-size: 15px; flex: none">ร</div>
+          <div style="display: flex; flex-direction: column; gap: 1px">
+            <span style="font-size: 13.5px; font-weight: 600">เพจร้านตัวอย่าง</span>
+            <span class="num" style="font-size: 12px; color: #626a7c">{{when}} · สาธารณะ</span>
+          </div>
+        </div>
+        <div style="padding: 0 14px 12px; font-size: 14px; line-height: 1.6;
+                    white-space: pre-line">{{caption}}</div>
+        <img src="demo.jpg" alt="" style="width: 100%; height: 300px; object-fit: cover; display: block">
+        <div style="display: flex; gap: 26px; padding: 10px 14px; border-top: 1px solid #eceef4;
+                    color: #626a7c; font-size: 13px">
+          <span>ถูกใจ</span><span>แสดงความคิดเห็น</span><span>แชร์</span>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ตัวอย่างโพสต์บน Instagram -->
+    <sc-if value="{{isIg}}" hint-placeholder-val="{{ false }}">
+      <div style="width: 400px; background: #fff; border: 1px solid #dfe3ec; border-radius: 10px;
+                  overflow: hidden">
+        <div style="display: flex; align-items: center; gap: 10px; padding: 11px 13px">
+          <div style="width: 32px; height: 32px; border-radius: 50%; background: #a8460a; color: #fff;
+                      display: flex; align-items: center; justify-content: center; font-weight: 700;
+                      font-size: 13px; flex: none">e</div>
+          <span style="font-size: 13px; font-weight: 600">example.shop</span>
+        </div>
+        <div style="width: 400px; height: 500px; overflow: hidden">
+          <img src="demo.jpg" alt="" style="width: 100%; height: 100%; object-fit: cover; display: block">
+        </div>
+        <div style="padding: 12px 13px; font-size: 13.5px; line-height: 1.6; white-space: pre-line">
+          <b>example.shop</b> {{caption}}</div>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px; margin-top: 14px; padding: 9px 13px;
+                  background: #fdefe4; border-radius: 7px; color: #7a3604; font-size: 12.5px; width: 400px">
+        <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="#a8460a" stroke-width="1.7">
+          <circle cx="10" cy="10" r="7.5"/><path d="M10 6v5M10 13.5h.01"/></svg>
+        รูปต้นฉบับ 4:3 กว้างเกินเกณฑ์ของ Instagram — จะครอปเป็น 4:5 ให้อัตโนมัติ
+      </div>
+    </sc-if>
+  </div>
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = {
+      preview: 'facebook',
+      aiOpen: true,
+      picked: 1,
+      caption: 'โปรโมชั่นเดือนนี้ ลด 20% ทุกชิ้นค่ะ\nจัดส่งฟรีเมื่อครบ 500 บาท ทักมาสอบถามได้เลยนะคะ',
+      slot: 1,
+      on: { fb: true, ig: true },
+    };
+  }
+
+  renderVals() {
+    const st = this.state;
+
+    const pageDef = [
+      { key: 'fb', name: 'เพจร้านตัวอย่าง', handle: 'Facebook', icon: 'f', color: '#3b3fd8' },
+      { key: 'ig', name: '@example.shop', handle: 'Instagram', icon: 'ig', color: '#a8460a' },
+    ];
+    const pages = pageDef.map((p) => {
+      const active = st.on[p.key];
+      return {
+        name: p.name, handle: p.handle, icon: p.icon, pressed: active ? 'true' : 'false',
+        style: 'display: flex; align-items: center; gap: 10px; padding: 11px 13px; flex-grow: 1;'
+          + 'border-radius: 8px; cursor: pointer; min-width: 0;'
+          + 'border: 1px solid ' + (active ? '#3b3fd8' : '#dfe3ec') + ';'
+          + 'background: ' + (active ? '#f6f7fe' : '#fff') + ';',
+        iconWrap: 'width: 28px; height: 28px; border-radius: 7px; flex: none; color: #fff;'
+          + 'display: flex; align-items: center; justify-content: center; font-weight: 700;'
+          + 'font-size: 12px; background: ' + p.color + ';',
+        check: 'width: 18px; height: 18px; border-radius: 50%; flex: none;'
+          + 'display: flex; align-items: center; justify-content: center;'
+          + 'background: ' + (active ? '#3b3fd8' : '#e3e6ee') + ';',
+        toggle: () => this.setState({ on: Object.assign({}, st.on, { [p.key]: !active }) }),
+      };
+    });
+
+    const draftDefs = [
+      { text: 'โปรโมชั่นเดือนนี้ ลด 20% ทุกชิ้นค่ะ\nจัดส่งฟรีเมื่อครบ 500 บาท ทักมาสอบถามได้เลยนะคะ',
+        tagText: 'ตรงโทนที่สุด', tagColor: '#1f7a4d', tagBg: '#e4f3ec' },
+      { text: 'ลด 20% ทั้งร้านค่ะ 🌿 ครบ 500 ส่งฟรี\nเดือนนี้เดือนเดียวนะคะ',
+        tagText: 'สั้นกว่า', tagColor: '#626a7c', tagBg: '#eef0f5' },
+      { text: 'ใครรอโปรอยู่ ได้เวลาแล้วค่ะ — ลด 20% ทุกชิ้น\nสั่งครบ 500 บาท ส่งฟรีถึงบ้าน',
+        tagText: 'ชวนคุยกว่า', tagColor: '#626a7c', tagBg: '#eef0f5' },
+    ];
+    const drafts = draftDefs.map((d, i) => ({
+      text: d.text, tagText: d.tagText,
+      tag: 'align-self: flex-start; padding: 2px 8px; border-radius: 999px; font-size: 12px;'
+        + 'font-weight: 600; background: ' + d.tagBg + '; color: ' + d.tagColor + ';',
+      style: 'display: flex; flex-direction: column; gap: 7px; padding: 11px 12px; cursor: pointer;'
+        + 'border-radius: 7px; background: #fff;'
+        + 'border: 1px solid ' + (st.picked === i ? '#3b3fd8' : '#e3e6ee') + ';'
+        + (st.picked === i ? 'box-shadow: 0 0 0 3px #eceffe;' : ''),
+      use: () => this.setState({ picked: i, caption: d.text }),
+    }));
+
+    const slotDefs = [
+      { label: 'อีก 1 ชั่วโมง', when: 'วันนี้ 15:30 น.', rel: 'อีกประมาณ 1 ชั่วโมง' },
+      { label: 'พรุ่งนี้ 09:00', when: 'พฤ. 5 ก.ย. 09:00 น.', rel: 'อีก 19 ชั่วโมง' },
+      { label: 'พรุ่งนี้ 18:00', when: 'พฤ. 5 ก.ย. 18:00 น.', rel: 'อีก 28 ชั่วโมง' },
+      { label: 'เลือกเอง', when: 'เลือกวันเวลาเอง', rel: '' },
+    ];
+    const slots = slotDefs.map((s, i) => ({
+      label: s.label,
+      style: 'height: 30px; font-size: 12.5px;'
+        + 'border-color: ' + (st.slot === i ? '#3b3fd8' : '#dfe3ec') + ';'
+        + (st.slot === i ? 'background: #f6f7fe; color: #3b3fd8; font-weight: 600;' : ''),
+      pick: () => this.setState({ slot: i }),
+    }));
+
+    const tabDefs = [
+      { key: 'facebook', label: 'ดูแบบบน Facebook' },
+      { key: 'instagram', label: 'ดูแบบบน Instagram' },
+    ];
+    const previewTabs = tabDefs.map((t) => ({
+      label: t.label,
+      style: 'height: 28px; padding: 0 14px; border: none; font-size: 12.5px; border-radius: 6px;'
+        + (st.preview === t.key
+          ? 'background: #3b3fd8; color: #fff; font-weight: 600;'
+          : 'background: transparent; color: #626a7c;'),
+      pick: () => this.setState({ preview: t.key }),
+    }));
+
+    const len = st.caption.length;
+    const limit = st.on.ig ? 2200 : 5000;
+
+    return {
+      pages, drafts, slots, previewTabs,
+      caption: st.caption,
+      captionLen: len + ' / ' + limit + ' ตัวอักษร',
+      count: (st.on.fb ? 1 : 0) + (st.on.ig ? 1 : 0) + ' ปลายทาง',
+      countColor: (st.on.fb || st.on.ig) ? '#626a7c' : '#b42318',
+      tone: 'เป็นกันเอง สุภาพ',
+      aiOpen: st.aiOpen,
+      toggleAi: () => this.setState({ aiOpen: !st.aiOpen }),
+      when: slotDefs[st.slot].when,
+      whenRelative: slotDefs[st.slot].rel,
+      isFb: st.preview === 'facebook',
+      isIg: st.preview === 'instagram',
+      ratios: [
+        { text: 'Facebook รับได้ตามต้นฉบับ', color: '#1f7a4d',
+          dot: 'width: 7px; height: 7px; border-radius: 50%; background: #1f7a4d; flex: none;' },
+        { text: 'Instagram จะครอปเป็น 4:5 ให้', color: '#8a6a00',
+          dot: 'width: 7px; height: 7px; border-radius: 50%; background: #c9a227; flex: none;' },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>

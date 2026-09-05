@@ -1,0 +1,41 @@
+# โปรดักชัน: ใช้โค้ดที่ build ไว้ใน image ไม่ใช่ next dev
+#
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+#
+# เหตุผล: วัดแล้วพบว่า next dev ทำให้ทุก request ถูก serialize บน event loop เดียว
+# (throughput 9.4 req/s, concurrency จริง = 1.0) และ /login ที่ไม่ query อะไรเลย
+# ก็ช้าเท่าหน้าคิวที่ยิง 6 query — คอขวดอยู่ที่ dev server ไม่ใช่ฐานข้อมูล
+#
+# หมายเหตุสำคัญ: compose "ต่อ" รายการ volumes/ports ของสองไฟล์เข้าด้วยกัน ไม่ได้ทับ
+# ต้อง !reset ก่อน ไม่งั้น bind mount ของโค้ดจากไฟล์หลักจะยังติดมา
+# = รันโค้ดจากเครื่องโฮสต์แทนโค้ดใน image (เคยเป็นแบบนั้นอยู่จริง)
+services:
+  web:
+    build:
+      context: .
+      target: prod
+    command: !reset null
+    environment:
+      NODE_ENV: production
+    restart: unless-stopped
+    volumes: !override
+      - storage:/data/storage
+
+  worker:
+    build:
+      context: .
+      target: prod
+    command: npm run worker
+    restart: unless-stopped
+    volumes: !override
+      - storage:/data/storage
+
+  migrate:
+    build:
+      context: .
+      target: prod
+    volumes: !override
+      - storage:/data/storage
+
+  db:
+    restart: unless-stopped

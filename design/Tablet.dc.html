@@ -1,0 +1,167 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+  <style>
+    body { margin: 0; font-family: Sarabun, 'Segoe UI', system-ui, sans-serif;
+           background: #f1f3f7; color: #10131a; font-size: 14px; }
+    a { color: #3b3fd8; text-decoration: none; } a:hover { color: #2a2ea8; }
+    * { box-sizing: border-box; }
+    .num { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+    .btn { min-height: 44px; padding: 0 16px; border-radius: 8px; border: 1px solid #dfe3ec;
+           background: #fff; color: #10131a; font: inherit; font-size: 14px; cursor: pointer;
+           display: inline-flex; align-items: center; gap: 7px; }
+    .btn.primary { background: #3b3fd8; border-color: #3b3fd8; color: #fff; font-weight: 600; }
+    button:focus-visible, [role="button"]:focus-visible, a:focus-visible {
+      outline: 2px solid #3b3fd8; outline-offset: 2px; border-radius: 8px; }
+    @media (prefers-reduced-motion: no-preference) {
+      .btn, .card, .day { transition: border-color .12s ease, background-color .12s ease; } }
+  </style>
+</helmet>
+
+<!-- 768px: คอลัมน์รายละเอียดยุบเป็นแผ่นล่าง เพราะสามคอลัมน์ไม่พอกว้าง
+     ทุกเป้าแตะ >= 44px เพราะแท็บเล็ตใช้นิ้ว ไม่ใช่เมาส์ -->
+<div style="display: flex; flex-direction: column; height: 1024px; background: #f1f3f7">
+
+  <div style="display: flex; align-items: center; gap: 12px; min-height: 60px; padding: 0 18px;
+              background: #fff; border-bottom: 1px solid #dfe3ec; flex: none">
+    <span style="font-weight: 700; font-size: 16px">คิวโพสต์</span>
+    <div style="display: flex; align-items: center; gap: 7px; padding: 5px 11px; border-radius: 999px;
+                background: #e4f3ec; color: #1f7a4d; font-size: 12px; font-weight: 500">
+      <span style="width: 7px; height: 7px; border-radius: 50%; background: #1f7a4d"></span>ทำงานปกติ
+    </div>
+    <div style="flex-grow: 1"></div>
+    <button class="btn primary">
+      <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2">
+        <path d="M10 4v12M4 10h12"/></svg>เพิ่มโพสต์</button>
+  </div>
+
+  <div style="display: flex; align-items: center; gap: 10px; padding: 11px 18px; flex: none;
+              background: #fdefe4; border-bottom: 1px solid #f3d9c2; color: #7a3604; font-size: 13.5px">
+    <svg width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="#a8460a" stroke-width="1.7"
+         style="flex: none"><path d="M10 2.5L18 17H2L10 2.5zM10 8v4M10 14.5h.01"/></svg>
+    <span style="flex-grow: 1; line-height: 1.5"><b>โพสต์ขึ้นไม่ครบ</b> — Facebook ขึ้นแล้ว
+      แต่ Instagram ล้มเหลว</span>
+    <button class="btn" style="min-height: 40px; font-size: 13px; flex: none">ส่งใหม่</button>
+  </div>
+
+  <!-- แถบวันแนวนอน แทนคอลัมน์ซ้ายของจอใหญ่ -->
+  <div style="display: flex; gap: 10px; padding: 16px 18px 8px; overflow-x: auto; flex: none">
+    <sc-for list="{{days}}" as="d" hint-placeholder-count="7">
+      <div class="day" role="button" tabindex="0" style="{{d.style}}" onClick="{{d.pick}}">
+        <span style="font-size: 12px; color: #626a7c">{{d.dow}}</span>
+        <span class="num" style="font-size: 19px; font-weight: 600">{{d.date}}</span>
+        <div style="display: flex; gap: 3px; height: 6px; align-items: center">
+          <sc-for list="{{d.dots}}" as="dot" hint-placeholder-count="2">
+            <span style="width: 5px; height: 5px; border-radius: 50%; background: {{dot.color}}"></span>
+          </sc-for>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+
+  <div style="flex-grow: 1; overflow: auto; padding: 8px 18px 18px; display: flex;
+              flex-direction: column; gap: 10px">
+    <sc-for list="{{posts}}" as="p" hint-placeholder-count="4">
+      <div class="card" style="{{p.card}}">
+        <div style="display: flex; gap: 14px; padding: 14px">
+          <img src="demo.jpg" alt="" style="width: 72px; height: 72px; border-radius: 8px;
+               object-fit: cover; flex: none; border: 1px solid #dfe3ec">
+          <div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 7px">
+            <div style="display: flex; align-items: center; gap: 9px; flex-wrap: wrap">
+              <span class="num" style="font-size: 15px; font-weight: 600">{{p.time}}</span>
+              <span style="{{p.badge}}">{{p.status}}</span>
+            </div>
+            <div style="font-size: 14px; line-height: 1.55; color: #3d4453">{{p.caption}}</div>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 2px">
+              <sc-for list="{{p.targets}}" as="t" hint-placeholder-count="2">
+                <span style="{{t.chip}}">
+                  <span style="width: 6px; height: 6px; border-radius: 50%; background: {{t.dot}}"></span>
+                  {{t.label}}
+                </span>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"$preview":{"width":768,"height":1024}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { day: 4 };
+  }
+
+  renderVals() {
+    const tone = {
+      posted:     { fg: '#1f7a4d', bg: '#e4f3ec', label: 'สำเร็จ', short: 'ขึ้นแล้ว' },
+      partial:    { fg: '#a8460a', bg: '#fdefe4', label: 'ขึ้นไม่ครบ', short: 'ไม่ครบ' },
+      failed:     { fg: '#b42318', bg: '#fdecea', label: 'ล้มเหลว', short: 'ล้มเหลว' },
+      pending:    { fg: '#626a7c', bg: '#eef0f5', label: 'รอโพสต์', short: 'รอ' },
+      publishing: { fg: '#3b3fd8', bg: '#eceffe', label: 'กำลังส่ง', short: 'กำลังส่ง' },
+    };
+
+    const dows = ['จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส', 'อา'];
+    const days = [2, 3, 4, 5, 6, 7, 8].map((date, i) => {
+      const active = date === this.state.day;
+      return {
+        date, dow: dows[i],
+        dots: date <= 5 ? [{ color: '#1f7a4d' }, { color: '#a8460a' }] : [],
+        style: 'display: flex; flex-direction: column; align-items: center; gap: 4px; flex: none;'
+          + 'width: 64px; min-height: 72px; padding: 10px 0; border-radius: 10px; cursor: pointer;'
+          + 'border: 1px solid ' + (active ? '#3b3fd8' : '#dfe3ec') + ';'
+          + 'background: ' + (active ? '#eceffe' : '#fff') + ';',
+        pick: () => this.setState({ day: date }),
+      };
+    });
+
+    const chip = (state, label) => ({
+      label: label + ' ' + tone[state].short,
+      dot: tone[state].fg,
+      chip: 'display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px;'
+        + 'border-radius: 999px; font-size: 12.5px; font-weight: 500;'
+        + 'background: ' + tone[state].bg + '; color: ' + tone[state].fg + ';',
+    });
+
+    const raw = [
+      { time: '09:00', status: 'posted',
+        caption: 'โปรโมชั่นเดือนนี้ ลด 20% ทุกชิ้นค่ะ จัดส่งฟรีเมื่อครบ 500 บาท',
+        targets: [chip('posted', 'Facebook'), chip('posted', 'Instagram')] },
+      { time: '12:30', status: 'partial',
+        caption: 'ของใหม่เข้าร้านแล้วค่ะ มาลองกันได้ที่หน้าร้าน',
+        targets: [chip('posted', 'Facebook'), chip('failed', 'Instagram')] },
+      { time: '15:00', status: 'publishing',
+        caption: 'บ่ายนี้มีของแจกหน้าร้านนะคะ มาเร็วได้เร็ว',
+        targets: [chip('posted', 'Facebook'), chip('publishing', 'Instagram')] },
+      { time: '18:00', status: 'pending',
+        caption: 'ปิดร้านสามทุ่มนะคะ ใครยังไม่ได้แวะรีบเลย',
+        targets: [chip('pending', 'Facebook')] },
+    ];
+
+    return {
+      days,
+      posts: raw.map((p) => ({
+        time: p.time, caption: p.caption, targets: p.targets,
+        status: tone[p.status].label,
+        badge: 'padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 600;'
+          + 'background: ' + tone[p.status].bg + '; color: ' + tone[p.status].fg + ';',
+        card: 'background: #fff; border-radius: 10px; border-left: 3px solid ' + tone[p.status].fg
+          + '; border-top: 1px solid #dfe3ec; border-right: 1px solid #dfe3ec;'
+          + 'border-bottom: 1px solid #dfe3ec;',
+      })),
+    };
+  }
+}
+</script>
+</body>
+</html>

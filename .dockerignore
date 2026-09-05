@@ -1,0 +1,18 @@
+# .env มีคีย์ที่ถอด token ของเพจลูกค้าได้ — ห้ามอบเข้า image เด็ดขาด
+# image ถูกส่งต่อ/เก็บใน registry ได้ คีย์ต้องมาจาก env ตอนรันเท่านั้น
+.env
+.env.*
+!.env.example
+
+# ของที่ต้องสร้างใหม่ใน image เสมอ ไม่ใช่ก๊อปจากเครื่องคนเขียน
+node_modules
+.next
+dist
+
+# ไม่เกี่ยวกับการรัน แต่ทำให้ build ช้าและ image ใหญ่
+.git
+docs/screenshots
+docs/system-preview.html
+*.log
+sent-messages.json
+mock-feed.json

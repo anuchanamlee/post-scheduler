@@ -1,0 +1,356 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+  <style>
+    body { margin: 0; font-family: Sarabun, 'Segoe UI', system-ui, sans-serif;
+           background: #f1f3f7; color: #10131a; font-size: 14px; }
+    a { color: #3b3fd8; text-decoration: none; } a:hover { color: #2a2ea8; }
+    * { box-sizing: border-box; }
+    .num { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+    .btn { height: 32px; padding: 0 14px; border-radius: 6px; border: 1px solid #dfe3ec;
+           background: #fff; color: #10131a; font: inherit; font-size: 13px; cursor: pointer;
+           display: inline-flex; align-items: center; gap: 6px; }
+    .btn:hover { border-color: #b9c0d0; }
+    .btn.primary { background: #3b3fd8; border-color: #3b3fd8; color: #fff; font-weight: 600; }
+    .btn.primary:hover { background: #2f33bd; }
+    .day:hover { background: #e8ebf3; }
+    .card:hover { border-color: #b9c0d0; }
+    /* โฟกัสคีย์บอร์ดต้องเห็นได้เสมอ */
+    button:focus-visible, [role="button"]:focus-visible, a:focus-visible {
+      outline: 2px solid #3b3fd8; outline-offset: 2px; border-radius: 6px; }
+    @media (prefers-reduced-motion: no-preference) {
+      .btn, .card, .day { transition: border-color .12s ease, background-color .12s ease; } }
+  </style>
+</helmet>
+
+<div style="display: flex; flex-direction: column; height: 900px; background: #f1f3f7">
+
+  <!-- แถบบน: ตัวตน + สุขภาพระบบ + สลับมุมมอง -->
+  <div style="display: flex; align-items: center; gap: 16px; height: 56px; padding: 0 20px;
+              background: #fff; border-bottom: 1px solid #dfe3ec; flex: none">
+    <div style="display: flex; align-items: center; gap: 10px">
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#3b3fd8" stroke-width="1.6">
+        <rect x="2.5" y="3.5" width="15" height="14" rx="2"/><path d="M2.5 8h15M6.5 2v3M13.5 2v3"/>
+        <path d="M8 12.5l1.6 1.6L13 11" stroke-width="1.8"/>
+      </svg>
+      <span style="font-weight: 700; font-size: 15px">คิวโพสต์</span>
+      <span style="color: #626a7c; font-size: 13px">ร้านตัวอย่าง</span>
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 7px; padding: 4px 10px; border-radius: 999px;
+                background: {{health.bg}}; color: {{health.fg}}; font-size: 12.5px; font-weight: 500">
+      <span style="width: 7px; height: 7px; border-radius: 50%; background: {{health.fg}}"></span>
+      {{health.label}}
+    </div>
+
+    <div style="flex-grow: 1"></div>
+
+    <div style="display: flex; background: #f1f3f7; border-radius: 7px; padding: 3px; gap: 2px">
+      <button class="btn" style="{{tabCal}}" onClick="{{showCal}}">
+        <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6">
+          <rect x="2.5" y="3.5" width="15" height="14" rx="2"/><path d="M2.5 8h15M6.5 2v3M13.5 2v3"/>
+        </svg>ปฏิทิน</button>
+      <button class="btn" style="{{tabList}}" onClick="{{showList}}">
+        <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6">
+          <path d="M6 5.5h11M6 10h11M6 14.5h11M3 5.5h.01M3 10h.01M3 14.5h.01"/>
+        </svg>ลิสต์</button>
+    </div>
+
+    <button class="btn primary">
+      <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M10 4v12M4 10h12"/></svg>เพิ่มโพสต์</button>
+  </div>
+
+  <!-- แถบเตือน: ขึ้นเฉพาะตอนมีของต้องตัดสินใจ -->
+  <sc-if value="{{alert.show}}" hint-placeholder-val="{{ true }}">
+    <div style="display: flex; align-items: center; gap: 10px; padding: 9px 20px; flex: none;
+                background: #fdefe4; border-bottom: 1px solid #f3d9c2; color: #7a3604; font-size: 13px">
+      <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="#a8460a" stroke-width="1.7">
+        <path d="M10 2.5L18 17H2L10 2.5zM10 8v4M10 14.5h.01"/></svg>
+      <span><b>{{alert.title}}</b> — {{alert.body}}</span>
+      <div style="flex-grow: 1"></div>
+      <button class="btn" style="height: 26px; font-size: 12.5px">ดูโพสต์</button>
+    </div>
+  </sc-if>
+
+  <div style="display: flex; flex-grow: 1; min-height: 0">
+
+    <!-- สัปดาห์: เห็นภาระงานทั้งอาทิตย์ในคอลัมน์เดียว -->
+    <div style="width: 168px; flex: none; background: #fff; border-right: 1px solid #dfe3ec;
+                display: flex; flex-direction: column">
+      <div style="padding: 14px 16px 8px; font-size: 12px; font-weight: 600; color: #626a7c;
+                  letter-spacing: .05em">กันยายน 2569</div>
+      <sc-for list="{{days}}" as="d" hint-placeholder-count="7">
+        <div class="day" role="button" tabindex="0" style="{{d.style}}" onClick="{{d.pick}}">
+          <div style="display: flex; align-items: baseline; gap: 8px">
+            <span style="font-size: 12.5px; color: #626a7c; width: 20px">{{d.dow}}</span>
+            <span class="num" style="font-size: 17px; font-weight: 600">{{d.date}}</span>
+          </div>
+          <div style="display: flex; gap: 3px; align-items: center">
+            <sc-for list="{{d.dots}}" as="dot" hint-placeholder-count="2">
+              <span style="width: 6px; height: 6px; border-radius: 50%; background: {{dot.color}}"></span>
+            </sc-for>
+            <sc-if value="{{d.empty}}" hint-placeholder-val="{{ false }}">
+              <span style="font-size: 12px; color: #a7aebe">—</span>
+            </sc-if>
+          </div>
+        </div>
+      </sc-for>
+
+      <div style="flex-grow: 1"></div>
+      <div style="padding: 14px 16px; border-top: 1px solid #dfe3ec; display: flex;
+                  flex-direction: column; gap: 7px">
+        <div style="font-size: 12px; color: #626a7c">โควตา Instagram วันนี้</div>
+        <div style="height: 5px; background: #eceffe; border-radius: 3px; overflow: hidden">
+          <div style="width: 12%; height: 100%; background: #3b3fd8"></div>
+        </div>
+        <div class="num" style="font-size: 12px; color: #626a7c">12 / 100 โพสต์</div>
+      </div>
+    </div>
+
+    <!-- ไทม์ไลน์ของวันที่เลือก -->
+    <div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; overflow: hidden">
+      <div style="display: flex; align-items: baseline; gap: 10px; padding: 16px 20px 10px">
+        <span style="font-size: 16px; font-weight: 600">{{sel.title}}</span>
+        <span style="font-size: 13px; color: #626a7c">{{sel.summary}}</span>
+      </div>
+
+      <div style="flex-grow: 1; overflow: auto; padding: 0 20px 20px; display: flex;
+                  flex-direction: column; gap: 8px">
+        <sc-for list="{{posts}}" as="p" hint-placeholder-count="4">
+          <div class="card" role="button" tabindex="0" style="{{p.cardStyle}}" onClick="{{p.pick}}">
+            <div class="num" style="width: 46px; flex: none; font-size: 14px; font-weight: 500;
+                                    color: #626a7c; padding-top: 2px">{{p.time}}</div>
+            <div style="width: 3px; align-self: stretch; border-radius: 2px; background: {{p.accent}}; flex: none"></div>
+            <img src="{{p.thumb}}" alt="" style="width: 44px; height: 44px; border-radius: 5px;
+                 object-fit: cover; flex: none; border: 1px solid #dfe3ec">
+            <div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px">
+              <div style="font-size: 13.5px; overflow: hidden; text-overflow: ellipsis;
+                          white-space: nowrap">{{p.caption}}</div>
+              <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap">
+                <sc-for list="{{p.targets}}" as="t" hint-placeholder-count="2">
+                  <span style="{{t.chip}}">
+                    <span style="width: 6px; height: 6px; border-radius: 50%; background: {{t.dot}}"></span>
+                    {{t.label}}
+                  </span>
+                </sc-for>
+              </div>
+            </div>
+            <span style="{{p.badge}}">{{p.status}}</span>
+          </div>
+        </sc-for>
+
+        <sc-if value="{{sel.empty}}" hint-placeholder-val="{{ false }}">
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 10px;
+                      padding: 48px 0; color: #626a7c">
+            <svg width="34" height="34" viewBox="0 0 20 20" fill="none" stroke="#b9c0d0" stroke-width="1.3">
+              <rect x="2.5" y="3.5" width="15" height="14" rx="2"/><path d="M2.5 8h15M10 11v4M8 13h4"/></svg>
+            <div style="font-size: 13.5px">วันนี้ยังไม่มีโพสต์</div>
+            <button class="btn">เพิ่มโพสต์วันนี้</button>
+          </div>
+        </sc-if>
+      </div>
+    </div>
+
+    <!-- รายละเอียดโพสต์ที่เลือก: ตัดสินใจได้จบในคอลัมน์นี้ -->
+    <div style="width: 340px; flex: none; background: #fff; border-left: 1px solid #dfe3ec;
+                display: flex; flex-direction: column; overflow: auto">
+      <div style="padding: 16px; display: flex; flex-direction: column; gap: 14px">
+
+        <div style="display: flex; align-items: center; gap: 8px">
+          <span style="{{detail.badge}}">{{detail.status}}</span>
+          <span class="num" style="font-size: 13px; color: #626a7c">{{detail.when}}</span>
+        </div>
+
+        <img src="{{detail.thumb}}" alt="" style="width: 100%; height: 180px; object-fit: cover;
+             border-radius: 8px; border: 1px solid #dfe3ec">
+
+        <div style="font-size: 13.5px; line-height: 1.6; white-space: pre-line">{{detail.caption}}</div>
+
+        <div style="display: flex; flex-direction: column; gap: 8px">
+          <div style="font-size: 12px; font-weight: 600; color: #626a7c">ปลายทาง</div>
+          <sc-for list="{{detail.targets}}" as="t" hint-placeholder-count="2">
+            <div style="display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+                        border: 1px solid #dfe3ec; border-radius: 7px">
+              <span style="width: 8px; height: 8px; border-radius: 50%; background: {{t.dot}}; flex: none"></span>
+              <div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px">
+                <div style="font-size: 13px; font-weight: 500">{{t.page}}</div>
+                <div style="font-size: 12px; color: {{t.noteColor}}">{{t.note}}</div>
+              </div>
+              <sc-if value="{{t.busy}}" hint-placeholder-val="{{ false }}">
+                <div style="width: 54px; height: 4px; border-radius: 3px; background: #eceffe;
+                            overflow: hidden; flex: none">
+                  <div style="width: 45%; height: 100%; background: #3b3fd8; border-radius: 3px"></div>
+                </div>
+              </sc-if>
+              <sc-if value="{{t.canRetry}}" hint-placeholder-val="{{ false }}">
+                <button class="btn" style="height: 26px; font-size: 12px">ส่งใหม่</button>
+              </sc-if>
+            </div>
+          </sc-for>
+        </div>
+
+        <sc-if value="{{detail.editable}}" hint-placeholder-val="{{ true }}">
+          <div style="display: flex; gap: 8px">
+            <button class="btn" style="flex-grow: 1">แก้ไข</button>
+            <button class="btn" style="flex-grow: 1">เลื่อนเวลา</button>
+            <button class="btn" style="color: #b42318">ยกเลิก</button>
+          </div>
+        </sc-if>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { view: 'calendar', day: 4, post: 1 };
+  }
+
+  data() {
+    return [
+      { day: 4, time: '09:00', caption: 'โปรโมชั่นเดือนนี้ ลด 20% ทุกชิ้นค่ะ จัดส่งฟรีเมื่อครบ 500 บาท',
+        status: 'posted',
+        targets: [
+          { label: 'FB', page: 'เพจร้านตัวอย่าง', state: 'posted', note: 'ขึ้นแล้ว 09:00 น.' },
+          { label: 'IG', page: '@example.shop', state: 'posted', note: 'ขึ้นแล้ว 09:00 น.' },
+        ] },
+      { day: 4, time: '12:30', caption: 'ของใหม่เข้าร้านแล้วค่ะ มาลองกันได้ที่หน้าร้าน',
+        status: 'partial',
+        targets: [
+          { label: 'FB', page: 'เพจร้านตัวอย่าง', state: 'posted', note: 'ขึ้นแล้ว 12:30 น.' },
+          { label: 'IG', page: '@example.shop', state: 'failed',
+            note: 'สัดส่วนรูปไม่ผ่านเกณฑ์ของ Instagram' },
+        ] },
+      { day: 4, time: '15:00', caption: 'บ่ายนี้มีของแจกหน้าร้านนะคะ มาเร็วได้เร็ว',
+        status: 'publishing',
+        targets: [
+          { label: 'FB', page: 'เพจร้านตัวอย่าง', state: 'posted', note: 'ขึ้นแล้ว 15:00 น.' },
+          { label: 'IG', page: '@example.shop', state: 'publishing',
+            note: 'กำลังเตรียมรูปกับ Instagram — ปกติใช้เวลาไม่เกิน 5 นาที' },
+        ] },
+      { day: 4, time: '18:00', caption: 'ปิดร้านสามทุ่มนะคะ ใครยังไม่ได้แวะรีบเลย',
+        status: 'pending',
+        targets: [
+          { label: 'FB', page: 'เพจร้านตัวอย่าง', state: 'pending', note: 'รอถึงเวลา' },
+        ] },
+      { day: 5, time: '10:00', caption: 'สินค้ามาใหม่สัปดาห์นี้',
+        status: 'pending',
+        targets: [{ label: 'IG', page: '@example.shop', state: 'pending', note: 'รอถึงเวลา' }] },
+    ];
+  }
+
+  tone(state) {
+    const map = {
+      posted:  { fg: '#1f7a4d', bg: '#e4f3ec', label: 'สำเร็จ' },
+      partial: { fg: '#a8460a', bg: '#fdefe4', label: 'ขึ้นไม่ครบ' },
+      failed:  { fg: '#b42318', bg: '#fdecea', label: 'ล้มเหลว' },
+      pending: { fg: '#626a7c', bg: '#eef0f5', label: 'รอโพสต์' },
+      publishing: { fg: '#3b3fd8', bg: '#eceffe', label: 'กำลังส่ง' },
+    };
+    return map[state] || map.pending;
+  }
+
+  renderVals() {
+    const all = this.data();
+    const dows = ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'];
+
+    const days = [2, 3, 4, 5, 6, 7, 8].map((date, i) => {
+      const mine = all.filter((p) => p.day === date);
+      const active = date === this.state.day;
+      return {
+        date, dow: dows[i], empty: mine.length === 0,
+        dots: mine.map((p) => ({ color: this.tone(p.status).fg })),
+        style: 'display: flex; align-items: center; justify-content: space-between; gap: 8px;'
+          + 'padding: 9px 16px; cursor: pointer; border-left: 3px solid '
+          + (active ? '#3b3fd8' : 'transparent') + ';'
+          + 'background: ' + (active ? '#eceffe' : 'transparent') + ';',
+        pick: () => this.setState({ day: date, post: null }),
+      };
+    });
+
+    const shown = all.filter((p) => p.day === this.state.day);
+    const idx = this.state.post === null ? (shown.length ? 0 : -1) : this.state.post;
+    const current = shown[idx] || shown[0] || all[0];
+
+    const shortLabel = {
+      posted: 'ขึ้นแล้ว', failed: 'ล้มเหลว', pending: 'รอ', partial: 'ไม่ครบ',
+      publishing: 'กำลังส่ง',
+    };
+    const chip = (t) => {
+      const c = this.tone(t.state);
+      return 'display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px;'
+        + 'border-radius: 999px; font-size: 12px; font-weight: 500;'
+        + 'background: ' + c.bg + '; color: ' + c.fg + ';';
+    };
+    const badge = (s) => {
+      const c = this.tone(s);
+      return 'padding: 3px 9px; border-radius: 999px; font-size: 12px; font-weight: 600;'
+        + 'background: ' + c.bg + '; color: ' + c.fg + '; flex: none;';
+    };
+
+    const posts = shown.map((p, i) => ({
+      time: p.time, caption: p.caption, status: this.tone(p.status).label,
+      accent: this.tone(p.status).fg, thumb: 'demo.jpg', badge: badge(p.status),
+      targets: p.targets.map((t) => ({
+        label: t.label + ' ' + shortLabel[t.state],
+        dot: this.tone(t.state).fg, chip: chip(t),
+      })),
+      cardStyle: 'display: flex; align-items: center; gap: 12px; padding: 11px 13px;'
+        + 'background: #fff; border-radius: 8px; cursor: pointer;'
+        + 'border: 1px solid ' + (i === idx ? '#3b3fd8' : '#dfe3ec') + ';'
+        + (i === idx ? 'box-shadow: 0 0 0 3px #eceffe;' : ''),
+      pick: () => this.setState({ post: i }),
+    }));
+
+    const partial = all.find((p) => p.status === 'partial');
+
+    return {
+      health: { label: 'ตัวส่งโพสต์ทำงานปกติ', fg: '#1f7a4d', bg: '#e4f3ec' },
+      alert: partial
+        ? { show: true, title: 'โพสต์ขึ้นไม่ครบทุกช่องทาง',
+            body: 'Facebook ขึ้นแล้ว แต่ Instagram ล้มเหลว ระบบไม่ลบของที่ขึ้นไปแล้ว' }
+        : { show: false, title: '', body: '' },
+      days, posts,
+      tabCal: 'height: 26px; padding: 0 12px; border: none; font-size: 12.5px; border-radius: 5px;'
+        + (this.state.view === 'calendar'
+          ? 'background: #fff; font-weight: 600; box-shadow: 0 1px 2px rgba(16,19,26,.08);'
+          : 'background: transparent; color: #626a7c;'),
+      tabList: 'height: 26px; padding: 0 12px; border: none; font-size: 12.5px; border-radius: 5px;'
+        + (this.state.view === 'list'
+          ? 'background: #fff; font-weight: 600; box-shadow: 0 1px 2px rgba(16,19,26,.08);'
+          : 'background: transparent; color: #626a7c;'),
+      showCal: () => this.setState({ view: 'calendar' }),
+      showList: () => this.setState({ view: 'list' }),
+      sel: {
+        title: 'พฤหัสบดี ' + this.state.day + ' กันยายน',
+        summary: shown.length ? shown.length + ' โพสต์' : '',
+        empty: shown.length === 0,
+      },
+      detail: {
+        status: this.tone(current.status).label, badge: badge(current.status),
+        when: current.time + ' น.', caption: current.caption, thumb: 'demo.jpg',
+        editable: current.status === 'pending',
+        targets: current.targets.map((t) => ({
+          page: t.page, note: t.note, dot: this.tone(t.state).fg,
+          noteColor: t.state === 'failed' ? '#b42318' : '#626a7c',
+          canRetry: t.state === 'failed',
+          busy: t.state === 'publishing',
+        })),
+      },
+    };
+  }
+}
+</script>
+</body>
+</html>

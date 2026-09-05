@@ -1,0 +1,252 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&family=IBM+Plex+Mono:wght@500&display=swap">
+  <style>
+    body {
+      margin: 0; background: #eff1f5; color: #10131a;
+      font-family: Sarabun, 'Segoe UI', system-ui, sans-serif;
+      font-size: 14px; line-height: 1.6; -webkit-font-smoothing: antialiased;
+    }
+    * { box-sizing: border-box; }
+    a { color: #3b3fd8; text-decoration: none; }
+    a:hover { color: #2f33bd; }
+    .num { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+    button { font: inherit; cursor: pointer; }
+    .lbl { font-size: 12px; font-weight: 600; color: #626a7c; }
+    .hint { font-size: 12.5px; color: #626a7c; }
+    .card { background: #ffffff; border: 1px solid #dfe3ec; border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 9px; }
+  </style>
+</helmet>
+
+<div style="width: 390px; height: 844px; background: #eff1f5; position: relative; overflow: hidden; display: flex; flex-direction: column">
+
+  <div style="min-height: 56px; background: #ffffff; border-bottom: 1px solid #dfe3ec; display: flex; align-items: center; gap: 8px; padding: 0 12px; flex: none">
+    <button style="width: 44px; height: 44px; border-radius: 6px; border: 1px solid #dfe3ec; background: #ffffff; display: inline-flex; align-items: center; justify-content: center">
+      <svg width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="#3d4453" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4l-6 6 6 6"/></svg>
+    </button>
+    <span style="font-weight: 700; font-size: 15px; flex-grow: 1">เขียนโพสต์</span>
+    <span class="hint">{{savedNote}}</span>
+  </div>
+
+  <div style="flex-grow: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 10px">
+
+    <!-- 1 · ปลายทาง — แตะทั้งแถว ไม่ใช่ติ๊ก checkbox เล็กๆ -->
+    <div class="card">
+      <span class="lbl">โพสต์ลงที่ไหน</span>
+      <sc-for list="{{pages}}" as="pg" hint-placeholder-count="2">
+        <button onClick="{{ pg.toggle }}" style="{{pg.style}}">
+          <span style="{{pg.markStyle}}"></span>
+          <span style="display: flex; flex-direction: column; align-items: flex-start; line-height: 1.35; flex-grow: 1">
+            <span style="font-size: 13.5px; font-weight: 600">{{pg.name}}</span>
+            <span style="font-size: 11.5px; color: #626a7c">{{pg.platform}}</span>
+          </span>
+          <span style="{{pg.tickStyle}}"></span>
+        </button>
+      </sc-for>
+    </div>
+
+    <!-- 2 · แคปชั่น + ผู้ช่วย -->
+    <div class="card">
+      <div style="display: flex; align-items: center; gap: 8px">
+        <span class="lbl" style="flex-grow: 1">ข้อความโพสต์</span>
+        <span class="num" style="font-size: 11.5px; color: #626a7c">{{charCount}}</span>
+      </div>
+      <div style="border: 1px solid #dfe3ec; border-radius: 6px; padding: 9px 11px; min-height: 96px; font-size: 13.5px; color: #10131a; line-height: 1.65; background: #ffffff">{{caption}}</div>
+      <div style="display: flex; gap: 7px; flex-wrap: wrap">
+        <button onClick="{{ draft }}" style="min-height: 40px; padding: 0 13px; border-radius: 6px; border: 1px solid #cfd4fb; background: #eceffe; color: #3b3fd8; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px">
+          <span style="{{sparkStyle}}"></span>
+          ให้ AI ช่วยร่าง
+        </button>
+        <button onClick="{{ tags }}" style="min-height: 40px; padding: 0 13px; border-radius: 6px; border: 1px solid #dfe3ec; background: #ffffff; font-size: 13px; display: inline-flex; align-items: center; gap: 6px">
+          <span style="{{tagStyle}}"></span>
+          ชุดแฮชแท็ก
+        </button>
+      </div>
+      <sc-if value="{{showTags}}" hint-placeholder-val="{{ true }}">
+        <div style="border-top: 1px solid #dfe3ec; padding-top: 9px; display: flex; flex-direction: column; gap: 7px">
+          <span class="hint">ชุดประจำร้าน — เดิมอยู่ในหน้าตั้งค่า ย้ายมาตรงจุดที่ใช้จริง</span>
+          <div style="display: flex; gap: 6px; flex-wrap: wrap">
+            <sc-for list="{{tagSets}}" as="t" hint-placeholder-count="3">
+              <button onClick="{{ t.pick }}" style="{{t.style}}">{{t.name}}</button>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+    </div>
+
+    <!-- 3 · รูป -->
+    <div class="card">
+      <div style="display: flex; align-items: baseline; gap: 8px">
+        <span class="lbl" style="flex-grow: 1">รูป</span>
+        <span class="hint">สูงสุด 10 ใบ</span>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 7px">
+        <div style="aspect-ratio: 1; border-radius: 6px; background: #eceffe; border: 1px solid #cfd4fb; display: flex; align-items: center; justify-content: center">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#3b3fd8" stroke-width="1.5"><rect x="2.5" y="3.5" width="15" height="13" rx="2"/><path d="M2.5 12.5l4-3.5 4 3 3-2.5 4 3.5"/></svg>
+        </div>
+        <div style="aspect-ratio: 1; border-radius: 6px; background: #fdefe4; border: 1px solid #f3d9c2; display: flex; align-items: center; justify-content: center">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#a8460a" stroke-width="1.5"><rect x="2.5" y="3.5" width="15" height="13" rx="2"/><path d="M2.5 12.5l4-3.5 4 3 3-2.5 4 3.5"/></svg>
+        </div>
+        <button style="aspect-ratio: 1; border-radius: 6px; border: 1px dashed #b9c0d0; background: #ffffff; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: #626a7c">
+          <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M10 4v12M4 10h12"/></svg>
+          <span style="font-size: 10.5px">เพิ่มรูป</span>
+        </button>
+        <button style="aspect-ratio: 1; border-radius: 6px; border: 1px dashed #cfd4fb; background: #ffffff; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: #3b3fd8">
+          <span style="{{sparkStyle}}"></span>
+          <span style="font-size: 10.5px">สร้างภาพ</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- 4 · เวลา — เลือกจากปุ่ม ไม่ต้องเปิดปฏิทินถ้าไม่จำเป็น -->
+    <div class="card">
+      <span class="lbl">เวลาที่จะโพสต์</span>
+      <div style="display: flex; gap: 7px; flex-wrap: wrap">
+        <sc-for list="{{slots}}" as="s" hint-placeholder-count="4">
+          <button onClick="{{ s.pick }}" style="{{s.style}}">
+            <span style="font-size: 11px; opacity: .8">{{s.when}}</span>
+            <span class="num" style="font-size: 14px; font-weight: 700; line-height: 1.15">{{s.time}}</span>
+          </button>
+        </sc-for>
+      </div>
+      <span class="hint">{{slotNote}}</span>
+    </div>
+
+    <div style="height: 96px"></div>
+  </div>
+
+  <!-- แถบลงมือแบบติดล่าง — ปุ่มรองมีคำอธิบายกำกับ ไม่ใช่ปุ่มหน้าตาเหมือนกัน 3 อัน -->
+  <div style="position: absolute; left: 0; right: 0; bottom: 0; background: #ffffff; border-top: 1px solid #dfe3ec; padding: 10px 12px 14px; display: flex; flex-direction: column; gap: 7px">
+    <button style="min-height: 48px; width: 100%; border-radius: 8px; border: 1px solid #3b3fd8; background: #3b3fd8; color: #fff; font-size: 15px; font-weight: 700">
+      เพิ่มเข้าคิว · {{queueTime}}
+    </button>
+    <div style="display: flex; gap: 8px">
+      <button style="flex-grow: 1; min-height: 44px; border-radius: 8px; border: 1px solid #dfe3ec; background: #ffffff; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.25">
+        <span style="font-size: 13px; font-weight: 600">เก็บเป็นร่าง</span>
+        <span style="font-size: 11px; color: #626a7c">ยังไม่ส่งจนกว่าจะกดเข้าคิว</span>
+      </button>
+      <button style="flex-grow: 1; min-height: 44px; border-radius: 8px; border: 1px solid #dfe3ec; background: #ffffff; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.25">
+        <span style="font-size: 13px; font-weight: 600">บันทึกแล้วเขียนต่อ</span>
+        <span style="font-size: 11px; color: #626a7c">เตรียมทั้งสัปดาห์รวดเดียว</span>
+      </button>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"showTagSets":{"editor":"boolean","default":true,"section":"สาธิต"}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = {
+      pages: { fb: true, ig: true },
+      slot: 1,
+      tags: props.showTagSets !== false,
+      tagSet: 0,
+    };
+  }
+
+  mask(inner, color, size) {
+    const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="none" stroke="black" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">' + inner + '</svg>';
+    const s = size || 18;
+    return 'width:' + s + 'px;height:' + s + 'px;flex:none;display:inline-block;background-color:' + color + ';'
+      + "-webkit-mask:url('data:image/svg+xml;utf8," + encodeURIComponent(svg) + "') center/contain no-repeat;"
+      + "mask:url('data:image/svg+xml;utf8," + encodeURIComponent(svg) + "') center/contain no-repeat;";
+  }
+
+  renderVals() {
+    const caption = 'เมนูใหม่เข้าร้านแล้ววันนี้ ข้าวผัดกุ้งสูตรต้นตำรับ หอมกระทะจริง สั่งกลับบ้านได้ทุกเมนู';
+
+    const pageDefs = [
+      { id: 'fb', name: 'ร้านลุงหนวด', platform: 'เพจ Facebook' },
+      { id: 'ig', name: 'lung_nuad.cafe', platform: 'Instagram Professional' },
+    ];
+
+    const pages = pageDefs.map((p) => {
+      const on = this.state.pages[p.id];
+      return {
+        name: p.name,
+        platform: p.platform,
+        style: 'width:100%;min-height:52px;border-radius:8px;padding:0 12px;display:flex;align-items:center;gap:10px;'
+          + 'text-align:left;border:1px solid ' + (on ? '#3b3fd8' : '#dfe3ec') + ';'
+          + 'background:' + (on ? '#eceffe' : '#ffffff') + ';',
+        markStyle: 'width:26px;height:26px;border-radius:6px;flex:none;display:inline-block;'
+          + 'background:' + (on ? '#3b3fd8' : '#f7f8fb') + ';border:1px solid ' + (on ? '#3b3fd8' : '#dfe3ec') + ';',
+        tickStyle: on
+          ? this.mask('<path d="M4 10.5l4 4 8-9"/>', '#3b3fd8', 18)
+          : 'width:18px;height:18px;display:inline-block;',
+        toggle: () => {
+          const next = Object.assign({}, this.state.pages);
+          next[p.id] = !next[p.id];
+          this.setState({ pages: next });
+        },
+      };
+    });
+
+    const slotDefs = [
+      { when: 'วันนี้', time: '17:00' },
+      { when: 'พรุ่งนี้', time: '09:00' },
+      { when: 'พรุ่งนี้', time: '17:00' },
+      { when: 'เลือกเอง', time: '＋' },
+    ];
+
+    const slots = slotDefs.map((s, i) => {
+      const on = i === this.state.slot;
+      return {
+        when: s.when,
+        time: s.time,
+        style: 'min-height:52px;min-width:84px;padding:0 12px;border-radius:8px;display:flex;flex-direction:column;'
+          + 'align-items:center;justify-content:center;'
+          + 'border:1px solid ' + (on ? '#3b3fd8' : '#dfe3ec') + ';'
+          + 'background:' + (on ? '#eceffe' : '#ffffff') + ';'
+          + 'color:' + (on ? '#3b3fd8' : '#10131a') + ';',
+        pick: () => this.setState({ slot: i }),
+      };
+    });
+
+    const setDefs = ['#ร้านลุงหนวด #ทองหล่อ', '#เมนูใหม่ #อร่อยบอกต่อ', '#โปรวันนี้'];
+    const tagSets = setDefs.map((name, i) => {
+      const on = i === this.state.tagSet;
+      return {
+        name,
+        style: 'min-height:40px;padding:0 12px;border-radius:999px;font-size:12.5px;'
+          + 'border:1px solid ' + (on ? '#3b3fd8' : '#dfe3ec') + ';'
+          + 'background:' + (on ? '#eceffe' : '#ffffff') + ';'
+          + 'color:' + (on ? '#3b3fd8' : '#3d4453') + ';',
+        pick: () => this.setState({ tagSet: i }),
+      };
+    });
+
+    const chosen = slotDefs[this.state.slot];
+    const n = Object.keys(this.state.pages).filter((k) => this.state.pages[k]).length;
+
+    return {
+      pages,
+      slots,
+      tagSets,
+      caption,
+      charCount: caption.length + ' ตัวอักษร',
+      savedNote: 'ร่างถูกเก็บอัตโนมัติ',
+      showTags: this.state.tags,
+      queueTime: chosen.time === '＋' ? 'เลือกเวลาเอง' : chosen.when + ' ' + chosen.time,
+      slotNote: n > 0
+        ? 'ช่วงเวลาประจำที่ตั้งไว้ ' + n + ' ปลายทางจะขึ้นพร้อมกัน'
+        : 'ยังไม่ได้เลือกปลายทาง',
+      sparkStyle: this.mask('<path d="M10 2.6l1.9 4.2 4.6.5-3.4 3.1.9 4.5L10 12.7 6 14.9l.9-4.5L3.5 7.3l4.6-.5z"/>', '#3b3fd8', 17),
+      tagStyle: this.mask('<path d="M3 3h6l8 8-6 6-8-8z"/><circle cx="7" cy="7" r="1.1"/>', '#3d4453', 17),
+      draft: () => this.setState({ tags: false }),
+      tags: () => this.setState({ tags: !this.state.tags }),
+    };
+  }
+}
+</script>
+</body>
+</html>

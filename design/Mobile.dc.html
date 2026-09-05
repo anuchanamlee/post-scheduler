@@ -1,0 +1,175 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+  <style>
+    body { margin: 0; font-family: Sarabun, 'Segoe UI', system-ui, sans-serif;
+           background: #f1f3f7; color: #10131a; font-size: 15px; }
+    a { color: #3b3fd8; text-decoration: none; } a:hover { color: #2a2ea8; }
+    * { box-sizing: border-box; }
+    .num { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+    /* โฟกัสคีย์บอร์ดต้องเห็นได้เสมอ */
+    button:focus-visible, [role="button"]:focus-visible, a:focus-visible {
+      outline: 2px solid #3b3fd8; outline-offset: 2px; border-radius: 6px; }
+    @media (prefers-reduced-motion: no-preference) {
+      .btn, .card, .day { transition: border-color .12s ease, background-color .12s ease; } }
+  </style>
+</helmet>
+
+<!-- มือถือคือที่ที่เจ้าของร้านเช็คงานจริง: อ่านสถานะได้ใน 2 วินาที ปุ่มไม่ต่ำกว่า 44px -->
+<div style="display: flex; flex-direction: column; height: 844px; background: #f1f3f7; position: relative">
+
+  <div style="padding: 14px 16px 10px; background: #fff; border-bottom: 1px solid #dfe3ec; flex: none">
+    <div style="display: flex; align-items: center; gap: 10px">
+      <span style="font-weight: 700; font-size: 18px">คิวโพสต์</span>
+      <div style="flex-grow: 1"></div>
+      <div style="display: flex; align-items: center; gap: 6px; padding: 4px 9px; border-radius: 999px;
+                  background: #e4f3ec; color: #1f7a4d; font-size: 12px; font-weight: 500">
+        <span style="width: 6px; height: 6px; border-radius: 50%; background: #1f7a4d"></span>ทำงานปกติ
+      </div>
+    </div>
+  </div>
+
+  <!-- เรื่องที่ต้องตัดสินใจ ลอยขึ้นบนสุดเสมอ -->
+  <div style="margin: 12px 14px 0; padding: 13px 14px; border-radius: 10px; background: #fdefe4;
+              border: 1px solid #f3d9c2; display: flex; flex-direction: column; gap: 9px; flex: none">
+    <div style="display: flex; align-items: flex-start; gap: 9px">
+      <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="#a8460a" stroke-width="1.7"
+           style="flex: none; margin-top: 1px">
+        <path d="M10 2.5L18 17H2L10 2.5zM10 8v4M10 14.5h.01"/></svg>
+      <div style="display: flex; flex-direction: column; gap: 3px">
+        <span style="font-size: 14px; font-weight: 600; color: #7a3604">โพสต์ขึ้นไม่ครบ 1 รายการ</span>
+        <span style="font-size: 13px; color: #7a3604; line-height: 1.5">Facebook ขึ้นแล้ว
+          แต่ Instagram ล้มเหลว ระบบไม่ลบของที่ขึ้นไปแล้ว</span>
+      </div>
+    </div>
+    <button style="height: 44px; border-radius: 8px; border: none; background: #a8460a; color: #fff;
+                   font: inherit; font-size: 14px; font-weight: 600; cursor: pointer">
+      ส่ง Instagram ใหม่</button>
+  </div>
+
+  <!-- แถบวัน เลื่อนแนวนอน -->
+  <div style="display: flex; gap: 8px; padding: 14px 14px 4px; overflow-x: auto; flex: none">
+    <sc-for list="{{days}}" as="d" hint-placeholder-count="5">
+      <div role="button" tabindex="0" style="{{d.style}}" onClick="{{d.pick}}">
+        <span style="font-size: 12px; color: #626a7c">{{d.dow}}</span>
+        <span class="num" style="font-size: 17px; font-weight: 600">{{d.date}}</span>
+        <span style="{{d.dotStyle}}"></span>
+      </div>
+    </sc-for>
+  </div>
+
+  <div style="flex-grow: 1; overflow: auto; padding: 10px 14px 90px; display: flex;
+              flex-direction: column; gap: 10px">
+    <sc-for list="{{posts}}" as="p" hint-placeholder-count="3">
+      <div style="background: #fff; border: 1px solid #dfe3ec; border-radius: 10px; overflow: hidden">
+        <div style="display: flex; gap: 12px; padding: 12px">
+          <img src="demo.jpg" alt="" style="width: 62px; height: 62px; border-radius: 7px;
+               object-fit: cover; flex: none; border: 1px solid #dfe3ec">
+          <div style="flex-grow: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px">
+            <div style="display: flex; align-items: center; gap: 8px">
+              <span class="num" style="font-size: 14px; font-weight: 600">{{p.time}}</span>
+              <span style="{{p.badge}}">{{p.status}}</span>
+            </div>
+            <div style="font-size: 13.5px; line-height: 1.5; color: #3d4453;
+                        display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+                        overflow: hidden">{{p.caption}}</div>
+          </div>
+        </div>
+        <div style="display: flex; gap: 8px; padding: 9px 12px; border-top: 1px solid #eceef4;
+                    background: #fafbfd; flex-wrap: wrap">
+          <sc-for list="{{p.targets}}" as="t" hint-placeholder-count="2">
+            <span style="{{t.chip}}">
+              <span style="width: 6px; height: 6px; border-radius: 50%; background: {{t.dot}}"></span>
+              {{t.label}}
+            </span>
+          </sc-for>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+
+  <!-- ปุ่มหลักอยู่ในระยะนิ้วโป้ง -->
+  <div style="position: absolute; left: 0; right: 0; bottom: 0; padding: 14px 16px 22px;
+              background: linear-gradient(to top, #f1f3f7 62%, rgba(241,243,247,0))">
+    <button style="width: 100%; height: 50px; border-radius: 10px; border: none; background: #3b3fd8;
+                   color: #fff; font: inherit; font-size: 15px; font-weight: 600; cursor: pointer;
+                   display: flex; align-items: center; justify-content: center; gap: 8px;
+                   box-shadow: 0 4px 14px rgba(59,63,216,.28)">
+      <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2">
+        <path d="M10 4v12M4 10h12"/></svg>เพิ่มโพสต์
+    </button>
+  </div>
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { day: 4 };
+  }
+
+  renderVals() {
+    const tone = {
+      posted:  { fg: '#1f7a4d', bg: '#e4f3ec', label: 'สำเร็จ' },
+      partial: { fg: '#a8460a', bg: '#fdefe4', label: 'ขึ้นไม่ครบ' },
+      failed:  { fg: '#b42318', bg: '#fdecea', label: 'ล้มเหลว' },
+      pending: { fg: '#626a7c', bg: '#eef0f5', label: 'รอโพสต์' },
+    };
+
+    const days = [{ d: 2, w: 'จ' }, { d: 3, w: 'อ' }, { d: 4, w: 'พ' },
+                  { d: 5, w: 'พฤ' }, { d: 6, w: 'ศ' }, { d: 7, w: 'ส' }].map((x) => {
+      const active = x.d === this.state.day;
+      return {
+        date: x.d, dow: x.w,
+        style: 'display: flex; flex-direction: column; align-items: center; gap: 3px; flex: none;'
+          + 'width: 52px; padding: 8px 0 7px; border-radius: 9px; cursor: pointer;'
+          + 'border: 1px solid ' + (active ? '#3b3fd8' : '#dfe3ec') + ';'
+          + 'background: ' + (active ? '#eceffe' : '#fff') + ';',
+        dotStyle: 'width: 5px; height: 5px; border-radius: 50%; background: '
+          + (x.d <= 5 ? '#3b3fd8' : 'transparent') + ';',
+        pick: () => this.setState({ day: x.d }),
+      };
+    });
+
+    const chip = (state, label) => ({
+      label,
+      dot: tone[state].fg,
+      chip: 'display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px;'
+        + 'border-radius: 999px; font-size: 12px; font-weight: 500;'
+        + 'background: ' + tone[state].bg + '; color: ' + tone[state].fg + ';',
+    });
+
+    const raw = [
+      { time: '09:00', status: 'posted',
+        caption: 'โปรโมชั่นเดือนนี้ ลด 20% ทุกชิ้นค่ะ จัดส่งฟรีเมื่อครบ 500 บาท',
+        targets: [chip('posted', 'Facebook ขึ้นแล้ว'), chip('posted', 'Instagram ขึ้นแล้ว')] },
+      { time: '12:30', status: 'partial',
+        caption: 'ของใหม่เข้าร้านแล้วค่ะ มาลองกันได้ที่หน้าร้าน',
+        targets: [chip('posted', 'Facebook ขึ้นแล้ว'), chip('failed', 'Instagram ล้มเหลว')] },
+      { time: '18:00', status: 'pending',
+        caption: 'ปิดร้านสามทุ่มนะคะ ใครยังไม่ได้แวะรีบเลย',
+        targets: [chip('pending', 'Facebook รอโพสต์')] },
+    ];
+
+    return {
+      days,
+      posts: raw.map((p) => ({
+        time: p.time, caption: p.caption, targets: p.targets,
+        status: tone[p.status].label,
+        badge: 'padding: 3px 9px; border-radius: 999px; font-size: 12px; font-weight: 600;'
+          + 'background: ' + tone[p.status].bg + '; color: ' + tone[p.status].fg + ';',
+      })),
+    };
+  }
+}
+</script>
+</body>
+</html>

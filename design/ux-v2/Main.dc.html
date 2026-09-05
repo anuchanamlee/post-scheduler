@@ -1,0 +1,281 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&family=IBM+Plex+Mono:wght@500&display=swap">
+  <style>
+    body {
+      margin: 0;
+      background: #eff1f5;
+      color: #10131a;
+      font-family: Sarabun, 'Segoe UI', system-ui, sans-serif;
+      font-size: 14px;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+    * { box-sizing: border-box; }
+    a { color: #3b3fd8; text-decoration: none; }
+    a:hover { color: #2f33bd; }
+    .num { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+    button { font: inherit; cursor: pointer; }
+  </style>
+</helmet>
+
+<div style="width: 390px; height: 844px; background: #eff1f5; position: relative; overflow: hidden; display: flex; flex-direction: column">
+
+  <!-- แถบบน 56px เท่าของจริง -->
+  <div style="min-height: 56px; background: #ffffff; border-bottom: 1px solid #dfe3ec; display: flex; align-items: center; gap: 8px; padding: 0 12px; flex: none">
+    <span style="font-weight: 700; font-size: 15px; flex-grow: 1">คิวโพสต์</span>
+    <button style="width: 44px; height: 44px; border-radius: 6px; border: 1px solid #dfe3ec; background: #ffffff; display: inline-flex; align-items: center; justify-content: center; position: relative">
+      <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="#3d4453" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3a4.5 4.5 0 0 0-4.5 4.5c0 3.5-1.5 4.5-1.5 4.5h12s-1.5-1-1.5-4.5A4.5 4.5 0 0 0 10 3z"/><path d="M8.5 15a1.75 1.75 0 0 0 3 0"/></svg>
+      <span style="position: absolute; top: 4px; right: 5px; min-width: 17px; height: 17px; border-radius: 999px; background: #b42318; color: #fff; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; padding: 0 4px">2</span>
+    </button>
+    <button style="height: 44px; padding: 0 16px; border-radius: 6px; border: 1px solid #3b3fd8; background: #3b3fd8; color: #fff; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px">
+      <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 4v12M4 10h12"/></svg>
+      เพิ่มโพสต์
+    </button>
+  </div>
+
+  <!-- เลือกวัน — แตะได้เต็ม 44px ไม่ต้องลาก -->
+  <div style="background: #ffffff; border-bottom: 1px solid #dfe3ec; display: flex; gap: 6px; padding: 8px 12px; overflow-x: auto; flex: none">
+    <sc-for list="{{days}}" as="d" hint-placeholder-count="5">
+      <button onClick="{{ d.pick }}" style="{{d.style}}">
+        <span style="font-size: 11px; opacity: .75">{{d.dow}}</span>
+        <span class="num" style="font-size: 15px; font-weight: 700; line-height: 1.1">{{d.date}}</span>
+        <span style="{{d.dotStyle}}"></span>
+      </button>
+    </sc-for>
+  </div>
+
+  <!-- รายการโพสต์ของวันนั้น -->
+  <div style="flex-grow: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 8px">
+
+    <div style="display: flex; align-items: baseline; gap: 8px; padding: 0 2px 2px">
+      <span style="font-size: 13px; font-weight: 600; color: #626a7c">{{dayTitle}}</span>
+      <span style="flex-grow: 1"></span>
+      <span class="num" style="font-size: 12px; color: #626a7c">{{dayCount}} โพสต์</span>
+    </div>
+
+    <sc-for list="{{posts}}" as="p" hint-placeholder-count="4">
+      <button onClick="{{ p.open }}" style="width: 100%; text-align: left; background: #ffffff; border: 1px solid #dfe3ec; border-left: 3px solid {{p.edge}}; border-radius: 8px; padding: 11px 12px; display: flex; flex-direction: column; gap: 7px; min-height: 44px">
+        <div style="display: flex; align-items: center; gap: 8px">
+          <span class="num" style="font-size: 15px; font-weight: 700">{{p.time}}</span>
+          <span style="flex-grow: 1"></span>
+          <span style="display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; background: {{p.pillBg}}; color: {{p.pillInk}}">
+            <span style="{{p.iconStyle}}"></span>
+            {{p.statusWord}}
+          </span>
+        </div>
+        <div style="font-size: 13.5px; color: #3d4453; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden">{{p.caption}}</div>
+        <div style="display: flex; gap: 6px; flex-wrap: wrap">
+          <sc-for list="{{p.pages}}" as="pg" hint-placeholder-count="2">
+            <span style="display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px; border-radius: 999px; font-size: 11.5px; background: #f7f8fb; color: #626a7c; border: 1px solid #dfe3ec">{{pg.name}} · {{pg.word}}</span>
+          </sc-for>
+        </div>
+      </button>
+    </sc-for>
+
+    <div style="height: 8px"></div>
+  </div>
+
+  <!-- แถบล่าง — ทางเข้าหลัก 5 ทาง สูง 44px ทุกช่อง -->
+  <div style="background: #ffffff; border-top: 1px solid #dfe3ec; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); flex: none; padding-bottom: 4px">
+    <sc-for list="{{nav}}" as="n" hint-placeholder-count="5">
+      <button onClick="{{ n.pick }}" style="{{n.style}}">
+        <span style="{{n.iconStyle}}"></span>
+        <span style="font-size: 11px; font-weight: 600">{{n.label}}</span>
+      </button>
+    </sc-for>
+  </div>
+
+  <!-- แผงลงมือ — ของจริงซ่อนทั้งแผงบนจอ &lt;1100px ทำให้มือถือทำอะไรกับโพสต์ไม่ได้เลย -->
+  <sc-if value="{{sheet}}" hint-placeholder-val="{{ true }}">
+    <div style="position: absolute; inset: 0; background: rgba(16, 19, 26, .45); display: flex; align-items: flex-end">
+      <div style="width: 100%; background: #ffffff; border-radius: 14px 14px 0 0; padding: 8px 12px 16px; display: flex; flex-direction: column; gap: 2px; box-shadow: 0 -8px 32px rgba(16, 19, 26, .18)">
+
+        <div style="display: flex; justify-content: center; padding: 4px 0 10px">
+          <span style="width: 38px; height: 4px; border-radius: 999px; background: #dfe3ec"></span>
+        </div>
+
+        <div style="display: flex; align-items: flex-start; gap: 10px; padding: 0 2px 10px; border-bottom: 1px solid #dfe3ec">
+          <div style="width: 46px; height: 46px; border-radius: 6px; background: #f7f8fb; border: 1px solid #dfe3ec; flex: none; display: flex; align-items: center; justify-content: center">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#99a1b3" stroke-width="1.5"><rect x="2.5" y="3.5" width="15" height="13" rx="2"/><path d="M2.5 12.5l4-3.5 4 3 3-2.5 4 3.5"/></svg>
+          </div>
+          <div style="flex-grow: 1; min-width: 0">
+            <div class="num" style="font-size: 15px; font-weight: 700">{{sheetTime}}</div>
+            <div style="font-size: 12.5px; color: #626a7c; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden">{{sheetCaption}}</div>
+          </div>
+          <button onClick="{{ close }}" style="width: 44px; height: 44px; flex: none; border-radius: 6px; border: 1px solid #dfe3ec; background: #ffffff; display: inline-flex; align-items: center; justify-content: center">
+            <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="#3d4453" stroke-width="1.8" stroke-linecap="round"><path d="M5 5l10 10M15 5L5 15"/></svg>
+          </button>
+        </div>
+
+        <sc-for list="{{actions}}" as="a" hint-placeholder-count="5">
+          <button onClick="{{ a.tap }}" style="min-height: 52px; width: 100%; text-align: left; background: #ffffff; border: none; border-bottom: 1px solid #f7f8fb; display: flex; align-items: center; gap: 12px; padding: 0 2px">
+            <span style="{{a.iconStyle}}"></span>
+            <span style="display: flex; flex-direction: column; line-height: 1.35">
+              <span style="font-size: 14px; font-weight: 600; color: {{a.ink}}">{{a.label}}</span>
+              <span style="font-size: 12px; color: #626a7c">{{a.hint}}</span>
+            </span>
+          </button>
+        </sc-for>
+
+      </div>
+    </div>
+  </sc-if>
+
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"openSheet":{"editor":"boolean","default":true,"section":"สาธิต"}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    // เปิดแผงค้างไว้ตั้งแต่แรก เพื่อให้เห็นสิ่งที่มือถือของจริงเข้าไม่ถึงเลย
+    this.state = { day: 2, sheet: props.openSheet === false ? null : 0, nav: 'queue' };
+  }
+
+  icon(path, color, size) {
+    const s = size || 20;
+    return 'width:' + s + 'px;height:' + s + 'px;flex:none;display:inline-block;'
+      + 'background-color:' + color + ';'
+      + "-webkit-mask:url('data:image/svg+xml;utf8," + encodeURIComponent(path) + "') center/contain no-repeat;"
+      + "mask:url('data:image/svg+xml;utf8," + encodeURIComponent(path) + "') center/contain no-repeat;";
+  }
+
+  svg(inner) {
+    return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="none" stroke="black" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">' + inner + '</svg>';
+  }
+
+  renderVals() {
+    const days = [
+      { dow: 'จ', date: '8', n: 2 },
+      { dow: 'อ', date: '9', n: 0 },
+      { dow: 'พ', date: '10', n: 3 },
+      { dow: 'พฤ', date: '11', n: 1 },
+      { dow: 'ศ', date: '12', n: 2 },
+      { dow: 'ส', date: '13', n: 0 },
+      { dow: 'อา', date: '14', n: 1 },
+    ].map((d, i) => {
+      const on = i === this.state.day;
+      return {
+        dow: d.dow,
+        date: d.date,
+        style: 'width:46px;min-height:52px;flex:none;border-radius:8px;display:flex;flex-direction:column;'
+          + 'align-items:center;justify-content:center;gap:1px;'
+          + 'border:1px solid ' + (on ? '#3b3fd8' : '#dfe3ec') + ';'
+          + 'background:' + (on ? '#eceffe' : '#ffffff') + ';'
+          + 'color:' + (on ? '#3b3fd8' : '#3d4453') + ';',
+        dotStyle: 'width:5px;height:5px;border-radius:50%;background:'
+          + (d.n ? (on ? '#3b3fd8' : '#b9c0d0') : 'transparent') + ';',
+        pick: () => this.setState({ day: i }),
+      };
+    });
+
+    const tickPath = this.svg('<path d="M4 10.5l4 4 8-9"/>');
+    const clockPath = this.svg('<circle cx="10" cy="10" r="7"/><path d="M10 6v4.5l3 1.6"/>');
+    const warnPath = this.svg('<path d="M10 3.5 2.8 16h14.4L10 3.5z"/><path d="M10 8.5v3.2M10 13.8v.1"/>');
+    const halfPath = this.svg('<circle cx="10" cy="10" r="7"/><path d="M10 3v14"/>');
+
+    const STATUS = {
+      posted: { word: 'ขึ้นแล้ว', bg: '#e4f3ec', ink: '#1f7a4d', edge: '#1f7a4d', icon: tickPath },
+      pending: { word: 'รอโพสต์', bg: '#f7f8fb', ink: '#626a7c', edge: '#b9c0d0', icon: clockPath },
+      failed: { word: 'ล้มเหลว', bg: '#fdecea', ink: '#b42318', edge: '#b42318', icon: warnPath },
+      partial: { word: 'ขึ้นไม่ครบ', bg: '#fdefe4', ink: '#a8460a', edge: '#a8460a', icon: halfPath },
+    };
+
+    const raw = [
+      { time: '09:00', status: 'posted', caption: 'เปิดร้านแล้ววันนี้ กาแฟดริปคั่วใหม่ มาลองก่อนใครได้เลย',
+        pages: [{ name: 'ร้านลุงหนวด', word: 'ขึ้นแล้ว' }, { name: 'IG ร้าน', word: 'ขึ้นแล้ว' }] },
+      { time: '12:30', status: 'partial', caption: 'เมนูใหม่ ข้าวผัดกุ้งสูตรต้นตำรับ ฿89 สั่งกลับบ้านได้',
+        pages: [{ name: 'ร้านลุงหนวด', word: 'ขึ้นแล้ว' }, { name: 'IG ร้าน', word: 'ล้มเหลว' }] },
+      { time: '17:00', status: 'pending', caption: 'ซื้อ 1 แถม 1 เฉพาะเมนูที่ร่วมรายการ วันนี้ถึงวันอาทิตย์',
+        pages: [{ name: 'ร้านลุงหนวด', word: 'รอโพสต์' }] },
+      { time: '19:30', status: 'failed', caption: 'ปิดปรับปรุงร้าน 5-7 กันยายนนี้ ขออภัยในความไม่สะดวก',
+        pages: [{ name: 'IG ร้าน', word: 'ล้มเหลว' }] },
+    ];
+
+    const posts = raw.map((p, i) => {
+      const s = STATUS[p.status];
+      return {
+        time: p.time,
+        caption: p.caption,
+        pages: p.pages,
+        statusWord: s.word,
+        pillBg: s.bg,
+        pillInk: s.ink,
+        edge: s.edge,
+        iconStyle: this.icon(s.icon, s.ink, 13),
+        open: () => this.setState({ sheet: i }),
+      };
+    });
+
+    const navIcons = {
+      queue: this.svg('<rect x="2.5" y="3.5" width="15" height="14" rx="2"/><path d="M2.5 8h15M6.5 2v3M13.5 2v3"/>'),
+      studio: this.svg('<path d="M10 2.6l1.9 4.2 4.6.5-3.4 3.1.9 4.5L10 12.7 6 14.9l.9-4.5L3.5 7.3l4.6-.5z"/>'),
+      library: this.svg('<rect x="2.5" y="2.5" width="6" height="6" rx="1.4"/><rect x="11.5" y="2.5" width="6" height="6" rx="1.4"/><rect x="2.5" y="11.5" width="6" height="6" rx="1.4"/><rect x="11.5" y="11.5" width="6" height="6" rx="1.4"/>'),
+      insights: this.svg('<path d="M3 16.5V9M8 16.5V4M13 16.5v-5M18 16.5v-9"/>'),
+      settings: this.svg('<circle cx="10" cy="10" r="2.6"/><path d="M10 2.5v2M10 15.5v2M17.5 10h-2M4.5 10h-2M15.3 4.7l-1.4 1.4M6.1 13.9l-1.4 1.4M15.3 15.3l-1.4-1.4M6.1 6.1L4.7 4.7"/>'),
+    };
+
+    const nav = [
+      { id: 'queue', label: 'คิว' },
+      { id: 'studio', label: 'ทำภาพ' },
+      { id: 'library', label: 'คลัง' },
+      { id: 'insights', label: 'ผล' },
+      { id: 'settings', label: 'ตั้งค่า' },
+    ].map((n) => {
+      const on = n.id === this.state.nav;
+      return {
+        label: n.label,
+        style: 'min-height:52px;border:none;background:transparent;display:flex;flex-direction:column;'
+          + 'align-items:center;justify-content:center;gap:3px;'
+          + 'color:' + (on ? '#3b3fd8' : '#626a7c') + ';',
+        iconStyle: this.icon(navIcons[n.id], on ? '#3b3fd8' : '#626a7c', 20),
+        pick: () => this.setState({ nav: n.id }),
+      };
+    });
+
+    const current = this.state.sheet === null ? null : raw[this.state.sheet];
+
+    const actions = [
+      { label: 'แก้ไขโพสต์', hint: 'แคปชั่น รูป ปลายทาง', ink: '#10131a',
+        icon: this.svg('<path d="M13.5 3.5l3 3L7 16H4v-3z"/>') },
+      { label: 'เลื่อนเวลา', hint: 'เลือกวันและเวลาใหม่ ไม่ต้องลาก', ink: '#10131a',
+        icon: clockPath },
+      { label: 'ทำซ้ำโพสต์นี้', hint: 'เปิดสำเนาเป็นร่างพรุ่งนี้', ink: '#10131a',
+        icon: this.svg('<rect x="6.5" y="6.5" width="11" height="11" rx="2"/><path d="M13.5 3.5h-9a2 2 0 0 0-2 2v9"/>') },
+      { label: 'โพสต์เดี๋ยวนี้', hint: 'ข้ามเวลาที่ตั้งไว้ ถามยืนยันก่อน', ink: '#10131a',
+        icon: this.svg('<path d="M4.5 3.5l12 6.5-12 6.5V3.5z"/>') },
+      { label: 'ยกเลิกโพสต์', hint: 'ยังอยู่ในประวัติ ไม่ถูกลบทิ้ง', ink: '#b42318',
+        icon: this.svg('<circle cx="10" cy="10" r="7"/><path d="M5.5 5.5l9 9"/>') },
+    ].map((a) => ({
+      label: a.label,
+      hint: a.hint,
+      ink: a.ink,
+      iconStyle: this.icon(a.icon, a.ink === '#b42318' ? '#b42318' : '#3d4453', 20),
+      tap: () => this.setState({ sheet: null }),
+    }));
+
+    return {
+      days,
+      posts,
+      nav,
+      actions,
+      dayTitle: 'พุธ 10 กันยายน',
+      dayCount: raw.length,
+      sheet: current !== null,
+      sheetTime: current ? current.time : '',
+      sheetCaption: current ? current.caption : '',
+      close: () => this.setState({ sheet: null }),
+    };
+  }
+}
+</script>
+</body>
+</html>

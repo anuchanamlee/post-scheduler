@@ -1,0 +1,240 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+  <style>
+    body { margin: 0; font-family: Sarabun, 'Segoe UI', system-ui, sans-serif;
+           background: #f1f3f7; color: #10131a; font-size: 14px; }
+    a { color: #3b3fd8; text-decoration: none; } a:hover { color: #2a2ea8; }
+    * { box-sizing: border-box; }
+    .num { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+    .btn { height: 32px; padding: 0 14px; border-radius: 6px; border: 1px solid #dfe3ec;
+           background: #fff; color: #10131a; font: inherit; font-size: 13px; cursor: pointer;
+           display: inline-flex; align-items: center; gap: 6px; }
+    .btn:hover { border-color: #b9c0d0; }
+    .btn.primary { background: #3b3fd8; border-color: #3b3fd8; color: #fff; font-weight: 600; }
+    .field { font-size: 12px; font-weight: 600; color: #626a7c; margin-bottom: 6px; }
+    .tag { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px;
+           border-radius: 6px; font-size: 12.5px; background: #eef0f5; }
+    /* โฟกัสคีย์บอร์ดต้องเห็นได้เสมอ */
+    button:focus-visible, [role="button"]:focus-visible, a:focus-visible {
+      outline: 2px solid #3b3fd8; outline-offset: 2px; border-radius: 6px; }
+    @media (prefers-reduced-motion: no-preference) {
+      .btn, .card, .day { transition: border-color .12s ease, background-color .12s ease; } }
+  </style>
+</helmet>
+
+<!-- หน้านี้ยังไม่มีในระบบจริง: ตอนนี้ต้องตั้งค่าผ่าน SQL -->
+<div style="display: flex; flex-direction: column; height: 760px; background: #f1f3f7">
+
+  <div style="display: flex; align-items: center; gap: 16px; height: 56px; padding: 0 22px;
+              background: #fff; border-bottom: 1px solid #dfe3ec; flex: none">
+    <span style="font-weight: 700; font-size: 15px">การเชื่อมต่อและโทนเสียง</span>
+    <div style="flex-grow: 1"></div>
+    <button class="btn">คู่มือการเชื่อมต่อ</button>
+  </div>
+
+  <div style="flex-grow: 1; overflow: auto; padding: 22px; display: grid;
+              grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; align-items: start">
+
+    <!-- สถานะ credential: สิ่งเดียวที่ทำให้ทั้งระบบหยุดได้ -->
+    <div style="grid-column: span 2; background: #fff; border: 1px solid #dfe3ec; border-radius: 10px;
+                padding: 18px 20px; display: flex; flex-direction: column; gap: 14px">
+      <div style="display: flex; align-items: center; gap: 10px">
+        <span style="font-weight: 600; font-size: 14.5px">เพจที่เชื่อมต่อไว้</span>
+        <div style="flex-grow: 1"></div>
+        <button class="btn primary" style="height: 30px">เชื่อมต่อเพจใหม่</button>
+      </div>
+
+      <sc-for list="{{conns}}" as="c" hint-placeholder-count="2">
+        <div style="{{c.row}}">
+          <span style="{{c.icon}}">{{c.iconText}}</span>
+          <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0; width: 220px">
+            <span style="font-size: 13.5px; font-weight: 600">{{c.name}}</span>
+            <span class="num" style="font-size: 12px; color: #626a7c">{{c.id}}</span>
+          </div>
+          <span style="{{c.badge}}">{{c.state}}</span>
+          <div style="display: flex; flex-direction: column; gap: 2px; flex-grow: 1; min-width: 0">
+            <span style="font-size: 12.5px; color: {{c.noteColor}}">{{c.note}}</span>
+            <span class="num" style="font-size: 12px; color: #626a7c">{{c.checked}}</span>
+          </div>
+          <button class="btn" style="height: 28px; font-size: 12.5px">{{c.action}}</button>
+        </div>
+      </sc-for>
+
+      <div style="display: flex; align-items: flex-start; gap: 9px; padding: 11px 13px;
+                  background: #f7f8fb; border-radius: 8px; font-size: 12.5px;
+                  color: #626a7c; line-height: 1.6">
+        <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="#626a7c" stroke-width="1.6"
+             style="flex: none; margin-top: 2px"><circle cx="10" cy="10" r="7.5"/><path d="M10 9v5M10 6.5h.01"/></svg>
+        <span>Token ที่ใช้เป็นแบบไม่มีวันหมดอายุ ระบบจึงไม่นับถอยหลังให้ แต่จะตรวจว่ายังใช้ได้จริงทุกชั่วโมง
+          — ถ้าลูกค้าเพิกถอนสิทธิ์เมื่อไหร่ จะขึ้นเตือนที่นี่และหยุดส่งโพสต์ของเพจนั้นทันที</span>
+      </div>
+    </div>
+
+    <!-- โทนเสียงต่อเพจ ไม่ใช่ต่อลูกค้า -->
+    <div style="background: #fff; border: 1px solid #dfe3ec; border-radius: 10px; padding: 18px 20px;
+                display: flex; flex-direction: column; gap: 16px">
+      <div style="display: flex; align-items: center; gap: 10px">
+        <span style="font-weight: 600; font-size: 14.5px">โทนเสียงของเพจ</span>
+        <div style="flex-grow: 1"></div>
+        <div style="display: flex; background: #f1f3f7; border-radius: 7px; padding: 3px; gap: 2px">
+          <sc-for list="{{voiceTabs}}" as="v" hint-placeholder-count="2">
+            <button class="btn" style="{{v.style}}" onClick="{{v.pick}}">{{v.label}}</button>
+          </sc-for>
+        </div>
+      </div>
+
+      <div>
+        <div class="field">อธิบายโทนเสียง</div>
+        <div style="padding: 10px 12px; border: 1px solid #dfe3ec; border-radius: 7px;
+                    font-size: 13.5px; line-height: 1.6">{{voice.tone}}</div>
+      </div>
+
+      <div>
+        <div class="field">ตัวอย่างแคปชั่นที่เจ้าของเพจชอบ</div>
+        <div style="display: flex; flex-direction: column; gap: 7px">
+          <sc-for list="{{voice.examples}}" as="e" hint-placeholder-count="2">
+            <div style="display: flex; align-items: flex-start; gap: 9px; padding: 10px 12px;
+                        background: #f7f8fb; border-radius: 7px; font-size: 13px; line-height: 1.55">
+              <span style="flex-grow: 1">{{e.text}}</span>
+              <button class="btn" style="height: 24px; padding: 0 8px; font-size: 12px; flex: none">ลบ</button>
+            </div>
+          </sc-for>
+          <button class="btn" style="align-self: flex-start; height: 28px; font-size: 12.5px">
+            + เพิ่มตัวอย่าง</button>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px">
+        <div>
+          <div class="field">คำที่ควรมี</div>
+          <div style="display: flex; gap: 6px; flex-wrap: wrap">
+            <sc-for list="{{voice.include}}" as="w" hint-placeholder-count="2">
+              <span class="tag" style="background: #e4f3ec; color: #1f7a4d">{{w.text}}</span>
+            </sc-for>
+          </div>
+        </div>
+        <div>
+          <div class="field">คำที่ห้ามใช้</div>
+          <div style="display: flex; gap: 6px; flex-wrap: wrap">
+            <sc-for list="{{voice.avoid}}" as="w" hint-placeholder-count="2">
+              <span class="tag" style="background: #fdecea; color: #b42318">{{w.text}}</span>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- โควตา AI: เห็นค่าใช้จ่ายก่อนบิลมา -->
+    <div style="background: #fff; border: 1px solid #dfe3ec; border-radius: 10px; padding: 18px 20px;
+                display: flex; flex-direction: column; gap: 16px">
+      <span style="font-weight: 600; font-size: 14.5px">โควตาผู้ช่วยแคปชั่นเดือนนี้</span>
+
+      <div style="display: flex; flex-direction: column; gap: 8px">
+        <div style="display: flex; align-items: baseline; gap: 8px">
+          <span class="num" style="font-size: 30px; font-weight: 600">12</span>
+          <span class="num" style="font-size: 14px; color: #626a7c">/ 300 ครั้ง</span>
+        </div>
+        <div style="height: 7px; background: #eceffe; border-radius: 4px; overflow: hidden">
+          <div style="width: 4%; height: 100%; background: #3b3fd8"></div>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 9px">
+        <sc-for list="{{costRows}}" as="r" hint-placeholder-count="3">
+          <div style="display: flex; align-items: center; gap: 10px; font-size: 13px">
+            <span style="color: #626a7c; flex-grow: 1">{{r.label}}</span>
+            <span class="num" style="font-weight: 500">{{r.value}}</span>
+          </div>
+        </sc-for>
+      </div>
+
+      <div style="padding: 11px 13px; background: #f7f8fb; border-radius: 8px; font-size: 12.5px;
+                  color: #626a7c; line-height: 1.6">
+        เมื่อถึงเพดาน ระบบจะปิดปุ่มร่างอัตโนมัติ ไม่หยุดการโพสต์ตามเวลาที่ตั้งไว้
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"$preview":{"width":1100,"height":760}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { voice: 'fb' };
+  }
+
+  renderVals() {
+    const connDefs = [
+      { name: 'เพจร้านตัวอย่าง', id: 'page 1234567890', iconText: 'f', color: '#3b3fd8',
+        state: 'ใช้งานได้', fg: '#1f7a4d', bg: '#e4f3ec',
+        note: 'System User token · ไม่มีวันหมดอายุ', noteColor: '#626a7c',
+        checked: 'ตรวจล่าสุด 08:45 น.', action: 'จัดการ' },
+      { name: '@example.shop', id: 'ig 17841400000000000', iconText: 'ig', color: '#a8460a',
+        state: 'ใช้งานได้', fg: '#1f7a4d', bg: '#e4f3ec',
+        note: 'ใช้ token ชุดเดียวกับเพจ', noteColor: '#626a7c',
+        checked: 'ตรวจล่าสุด 08:45 น.', action: 'จัดการ' },
+    ];
+
+    const conns = connDefs.map((c) => ({
+      name: c.name, id: c.id, iconText: c.iconText, state: c.state,
+      note: c.note, noteColor: c.noteColor, checked: c.checked, action: c.action,
+      row: 'display: flex; align-items: center; gap: 14px; padding: 13px 15px;'
+        + 'border: 1px solid #dfe3ec; border-radius: 9px;',
+      icon: 'width: 30px; height: 30px; border-radius: 8px; flex: none; color: #fff;'
+        + 'display: flex; align-items: center; justify-content: center; font-weight: 700;'
+        + 'font-size: 12px; background: ' + c.color + ';',
+      badge: 'padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; flex: none;'
+        + 'background: ' + c.bg + '; color: ' + c.fg + ';',
+    }));
+
+    const voices = {
+      fb: {
+        tone: 'เป็นกันเอง สุภาพ ใช้คำว่า "ค่ะ" ลงท้าย ไม่ขายตรงจนเกินไป',
+        examples: [
+          { text: 'ของใหม่เข้าแล้วค่ะ ใครรอรุ่นนี้อยู่ทักมาได้เลยนะคะ' },
+          { text: 'อากาศร้อนแบบนี้ ร้านมีของเย็นๆ รอค่ะ' },
+        ],
+        include: [{ text: 'จัดส่งฟรี' }],
+        avoid: [{ text: 'ถูกที่สุดในโลก' }, { text: 'การันตี 100%' }],
+      },
+      ig: {
+        tone: 'สั้น กระชับ ใช้อิโมจิได้ เน้นภาพเป็นหลัก',
+        examples: [{ text: 'ใหม่ ✨' }, { text: 'วันนี้ที่ร้าน ☕' }],
+        include: [],
+        avoid: [{ text: 'สั่งด่วน' }],
+      },
+    };
+
+    const tabDefs = [{ key: 'fb', label: 'เพจร้านตัวอย่าง' }, { key: 'ig', label: '@example.shop' }];
+    const voiceTabs = tabDefs.map((t) => ({
+      label: t.label,
+      style: 'height: 26px; padding: 0 12px; border: none; font-size: 12.5px; border-radius: 5px;'
+        + (this.state.voice === t.key
+          ? 'background: #fff; font-weight: 600; box-shadow: 0 1px 2px rgba(16,19,26,.08);'
+          : 'background: transparent; color: #626a7c;'),
+      pick: () => this.setState({ voice: t.key }),
+    }));
+
+    return {
+      conns, voiceTabs,
+      voice: voices[this.state.voice],
+      costRows: [
+        { label: 'ค่าใช้จ่ายสะสม', value: '0.14 USD' },
+        { label: 'เพดานของเดือนนี้', value: '5.00 USD' },
+        { label: 'โมเดลที่ใช้', value: 'claude-sonnet-5' },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>
