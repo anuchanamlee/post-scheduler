@@ -1,0 +1,620 @@
+<title>เปิดใช้งานจริง post-scheduler</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@500;600;700&family=Sarabun:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  /* พาเลตต์ยกมาจาก globals.css ของตัวระบบเอง — หน้านี้เป็นเอกสารของมัน ไม่ใช่ของแยก */
+  :root {
+    --ground: #f2f4f7;
+    --surface: #ffffff;
+    --surface-2: #f7f8fb;
+    --ink: #10131a;
+    --ink-2: #3d4453;
+    --muted: #626a7c;
+    --line: #dfe3ec;
+    --line-strong: #b9c0d0;
+    --accent: #3b3fd8;
+    --accent-soft: #eceffe;
+    --accent-line: #cfd4fb;
+    --ok: #1f7a4d;      --ok-bg: #e4f3ec;
+    --warn: #8a6a00;    --warn-bg: #fbf3dd;
+    --bad: #b42318;     --bad-bg: #fdecea;
+    --shadow: 0 1px 2px rgb(16 19 26 / 6%);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground: #0e1016;
+      --surface: #171a22;
+      --surface-2: #1d212b;
+      --ink: #e8eaf1;
+      --ink-2: #c2c8d6;
+      --muted: #99a1b3;
+      --line: #2b303d;
+      --line-strong: #414859;
+      --accent: #8f92fb;
+      --accent-soft: #22243a;
+      --accent-line: #383c5e;
+      --ok: #7fc09b;      --ok-bg: #16261e;
+      --warn: #d7bb63;    --warn-bg: #262214;
+      --bad: #f2867c;     --bad-bg: #2c1a19;
+      --shadow: 0 1px 2px rgb(0 0 0 / 40%);
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #0e1016;
+    --surface: #171a22;
+    --surface-2: #1d212b;
+    --ink: #e8eaf1;
+    --ink-2: #c2c8d6;
+    --muted: #99a1b3;
+    --line: #2b303d;
+    --line-strong: #414859;
+    --accent: #8f92fb;
+    --accent-soft: #22243a;
+    --accent-line: #383c5e;
+    --ok: #7fc09b;      --ok-bg: #16261e;
+    --warn: #d7bb63;    --warn-bg: #262214;
+    --bad: #f2867c;     --bad-bg: #2c1a19;
+    --shadow: 0 1px 2px rgb(0 0 0 / 40%);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--ground);
+    color: var(--ink);
+    font-family: Sarabun, 'Segoe UI', system-ui, sans-serif;
+    font-size: 15px;
+    line-height: 1.75;
+  }
+
+  h1, h2, h3, .ui { font-family: 'IBM Plex Sans Thai', Sarabun, system-ui, sans-serif; }
+  code, kbd, .mono { font-family: 'IBM Plex Mono', ui-monospace, monospace; }
+
+  .wrap { max-width: 980px; margin: 0 auto; padding: 0 20px 96px; }
+
+  /* ── หัวเรื่อง ── */
+  header.top {
+    padding: 40px 0 22px;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 26px;
+  }
+  h1 {
+    margin: 0 0 8px;
+    font-size: 30px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
+  .lede { margin: 0; max-width: 62ch; color: var(--ink-2); }
+  .eyebrow {
+    display: inline-block; margin-bottom: 12px;
+    font-size: 11.5px; font-weight: 600; letter-spacing: .09em;
+    text-transform: uppercase; color: var(--muted);
+  }
+
+  /* ── แถบความคืบหน้า ── */
+  .progress-bar {
+    position: sticky; top: 0; z-index: 10;
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: 10px; box-shadow: var(--shadow);
+    padding: 11px 14px; margin-bottom: 26px;
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  }
+  .progress-track {
+    flex-grow: 1; min-width: 160px; height: 7px; border-radius: 999px;
+    background: var(--surface-2); overflow: hidden;
+  }
+  .progress-fill {
+    display: block; height: 100%; width: 0%;
+    background: var(--accent); transition: width .2s ease;
+  }
+  .progress-num { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .reset {
+    border: 1px solid var(--line); background: var(--surface); color: var(--muted);
+    border-radius: 6px; min-height: 32px; padding: 0 11px; font: inherit; font-size: 12.5px;
+    cursor: pointer;
+  }
+  .reset:hover { border-color: var(--line-strong); color: var(--ink); }
+
+  /* ── สถานะตอนนี้ ── */
+  .status-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 10px; margin-bottom: 34px;
+  }
+  .status {
+    border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px;
+    background: var(--surface); display: flex; flex-direction: column; gap: 3px;
+  }
+  .status b { font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .status span { font-size: 12.5px; color: var(--muted); line-height: 1.5; }
+  .status[data-tone="bad"] { border-left: 3px solid var(--bad); }
+  .status[data-tone="bad"] b { color: var(--bad); }
+  .status[data-tone="warn"] { border-left: 3px solid var(--warn); }
+  .status[data-tone="warn"] b { color: var(--warn); }
+  .status[data-tone="ok"] { border-left: 3px solid var(--ok); }
+  .status[data-tone="ok"] b { color: var(--ok); }
+
+  /* ── ขั้นตอน: ลำดับมีความหมายจริง ข้ามไม่ได้ ── */
+  .step {
+    display: grid; grid-template-columns: 42px 1fr; gap: 16px;
+    padding: 22px 0; border-top: 1px solid var(--line);
+  }
+  .step-n {
+    font-family: 'IBM Plex Mono', monospace; font-size: 13px; font-weight: 500;
+    color: var(--muted); padding-top: 3px; font-variant-numeric: tabular-nums;
+  }
+  .step h2 { margin: 0 0 4px; font-size: 18px; font-weight: 600; }
+  .step > div > p { margin: 0 0 12px; color: var(--ink-2); max-width: 66ch; }
+  .step h3 {
+    margin: 18px 0 8px; font-size: 12px; font-weight: 600;
+    letter-spacing: .07em; text-transform: uppercase; color: var(--muted);
+  }
+  .who {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 12px; font-weight: 600; padding: 2px 9px; border-radius: 999px;
+    background: var(--surface-2); color: var(--muted); margin-left: 8px;
+    vertical-align: 3px; white-space: nowrap;
+  }
+  .who[data-who="me"] { background: var(--accent-soft); color: var(--accent); }
+
+  /* ── เช็คลิสต์ ── */
+  ul.checks { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+  ul.checks li { display: flex; }
+  label.check {
+    display: flex; gap: 10px; align-items: flex-start; width: 100%;
+    padding: 8px 10px; border-radius: 7px; cursor: pointer; line-height: 1.6;
+  }
+  label.check:hover { background: var(--surface-2); }
+  label.check input { margin: 5px 0 0; width: 16px; height: 16px; flex: none; accent-color: var(--accent); }
+  label.check input:checked ~ span { color: var(--muted); text-decoration: line-through; }
+  label.check span { font-size: 14.5px; }
+
+  /* ── คำสั่ง ── */
+  .cmd {
+    position: relative; background: var(--surface-2); border: 1px solid var(--line);
+    border-radius: 8px; margin: 0 0 12px;
+  }
+  .cmd pre {
+    margin: 0; padding: 12px 46px 12px 14px; overflow-x: auto;
+    font-size: 13px; line-height: 1.7;
+  }
+  .cmd button {
+    position: absolute; top: 7px; right: 7px;
+    border: 1px solid var(--line); background: var(--surface); color: var(--muted);
+    border-radius: 6px; height: 28px; padding: 0 9px; font: inherit; font-size: 11.5px;
+    cursor: pointer;
+  }
+  .cmd button:hover { border-color: var(--line-strong); color: var(--ink); }
+
+  code { font-size: .92em; background: var(--surface-2); padding: 1px 5px; border-radius: 4px; }
+
+  /* ── ตาราง ── */
+  .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; margin-bottom: 12px; }
+  table { border-collapse: collapse; width: 100%; min-width: 480px; background: var(--surface); }
+  th, td { text-align: left; padding: 9px 13px; border-bottom: 1px solid var(--line); font-size: 13.5px; vertical-align: top; }
+  th { font-size: 11.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); background: var(--surface-2); }
+  tr:last-child td { border-bottom: none; }
+  td.mono { font-family: 'IBM Plex Mono', monospace; font-size: 12.5px; }
+
+  /* ── กล่องเตือน ── */
+  .note {
+    border-radius: 8px; padding: 11px 14px; margin: 0 0 12px;
+    font-size: 13.5px; line-height: 1.65; max-width: 68ch;
+    border: 1px solid var(--line);
+  }
+  .note[data-kind="warn"] { background: var(--warn-bg); border-color: transparent; color: var(--warn); }
+  .note[data-kind="bad"] { background: var(--bad-bg); border-color: transparent; color: var(--bad); }
+  .note[data-kind="ok"] { background: var(--ok-bg); border-color: transparent; color: var(--ok); }
+  .note b { font-weight: 700; }
+
+  footer {
+    margin-top: 40px; padding-top: 18px; border-top: 1px solid var(--line);
+    font-size: 12.5px; color: var(--muted); max-width: 68ch;
+  }
+
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+
+  @media (max-width: 620px) {
+    .step { grid-template-columns: 1fr; gap: 6px; }
+    .step-n { padding-top: 0; }
+    h1 { font-size: 25px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .progress-fill { transition: none; }
+  }
+</style>
+
+<div class="wrap">
+
+<header class="top">
+  <span class="eyebrow">post-scheduler · จาก provider จำลอง → เพจจริง</span>
+  <h1>เปิดใช้งานจริง post-scheduler</h1>
+  <p class="lede">
+    ระบบทำงานครบทุกอย่างอยู่แล้ว แต่ปลายทางยังเป็นของจำลอง — โพสต์ที่ขึ้น “สำเร็จ” ทั้งหมด
+    ขึ้นที่ <code>/mock-feed</code> ไม่ใช่เพจจริง หน้านี้คือลำดับที่ต้องทำเพื่อสลับเป็นของจริง
+    ตรวจสถานะได้ทุกเมื่อด้วย <code>npm run readiness</code>
+  </p>
+</header>
+
+<div class="progress-bar">
+  <span class="ui" style="font-size: 13.5px; font-weight: 600">ความคืบหน้า</span>
+  <span class="progress-track"><span class="progress-fill" id="fill"></span></span>
+  <span class="progress-num" id="count">0 / 0</span>
+  <button class="reset" id="reset" type="button">ล้างเครื่องหมาย</button>
+</div>
+
+<div class="status-grid">
+  <div class="status" data-tone="bad">
+    <b>3</b>
+    <span>ติดอยู่ — ยังส่งมอบไม่ได้จนกว่าจะแก้ครบ</span>
+  </div>
+  <div class="status" data-tone="warn">
+    <b>4</b>
+    <span>ควรทำ — ใช้ได้แต่เสี่ยงเวลามีปัญหาแล้วไม่มีใครรู้</span>
+  </div>
+  <div class="status" data-tone="ok">
+    <b>177</b>
+    <span>เทสต์ที่ผ่านแล้ว · 18 หน้าเปิดได้ครบ · worker เดินอยู่</span>
+  </div>
+</div>
+
+<section class="step">
+  <span class="step-n">01</span>
+  <div>
+    <h2>เตรียมบัญชีที่ต้องมี<span class="who" data-who="me">ต้องใช้บัญชีของเจ้าของ</span></h2>
+    <p>
+      ห้าอย่างนี้ผมทำแทนไม่ได้ ต้องเป็นคนที่ถือบัญชีจริงกดเอง เพราะทุกอันออก token ที่ผูกกับตัวตน
+      เริ่มจาก Meta ก่อน เพราะเป็นอันเดียวที่ขาดไม่ได้จริงๆ
+    </p>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>บัญชี</th><th>ได้อะไรมา</th><th>ขาดแล้วเป็นยังไง</th><th>ค่าใช้จ่าย</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Meta Business Manager + แอปที่ business.facebook.com</td>
+            <td class="mono">System User token</td>
+            <td>โพสต์ขึ้นเพจจริงไม่ได้เลย</td>
+            <td>ฟรี</td>
+          </tr>
+          <tr>
+            <td>โดเมน + HTTPS (VPS หรือ Cloudflare Tunnel)</td>
+            <td class="mono">PUBLIC_BASE_URL</td>
+            <td>Instagram โหลดรูปไม่ได้ → โพสต์ IG ล้มทุกครั้ง</td>
+            <td>ตั้งแต่ฟรี (tunnel) ถึงหลักร้อย/เดือน</td>
+          </tr>
+          <tr>
+            <td>Cloudflare R2 / Backblaze B2 / S3</td>
+            <td class="mono">S3_ACCESS_KEY · S3_SECRET_KEY</td>
+            <td>VPS ตายทีเดียว รูปลูกค้าหายหมด</td>
+            <td>R2 ฟรี 10 GB แรก</td>
+          </tr>
+          <tr>
+            <td>LINE Official Account (Messaging API)</td>
+            <td class="mono">channel access token · userId</td>
+            <td>โพสต์ล้มตอนตี 2 แล้วไม่มีใครรู้</td>
+            <td>ฟรี</td>
+          </tr>
+          <tr>
+            <td>OpenRouter</td>
+            <td class="mono">OPENROUTER_API_KEY</td>
+            <td>ผู้ช่วยแคปชั่นและภาพ AI เป็นของจำลอง (ระบบอื่นใช้ได้ปกติ)</td>
+            <td>จ่ายตามใช้ ~$0.04/ภาพ</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <ul class="checks">
+      <li><label class="check"><input type="checkbox" data-k="acc-meta"><span>สมัคร Meta Business Manager และสร้างแอปแล้ว</span></label></li>
+      <li><label class="check"><input type="checkbox" data-k="acc-domain"><span>มีโดเมน HTTPS ที่เปิดจากอินเทอร์เน็ตได้</span></label></li>
+      <li><label class="check"><input type="checkbox" data-k="acc-s3"><span>สร้าง bucket R2/B2/S3 แล้ว</span></label></li>
+      <li><label class="check"><input type="checkbox" data-k="acc-line"><span>สร้าง LINE OA + Messaging API channel แล้ว</span></label></li>
+      <li><label class="check"><input type="checkbox" data-k="acc-or"><span>มี OpenRouter API key แล้ว (ข้ามได้ถ้ายังไม่ใช้ AI)</span></label></li>
+    </ul>
+  </div>
+</section>
+
+<section class="step">
+  <span class="step-n">02</span>
+  <div>
+    <h2>ผูกลูกค้าเข้ากับแอป<span class="who" data-who="me">ลูกค้าต้องกดรับเอง</span></h2>
+    <p>
+      ระบบวิ่งใน Development Mode ซึ่ง<b>ไม่ต้องผ่าน App Review และไม่ต้อง Business Verification</b>
+      — แต่มีเงื่อนไขเดียวที่ห้ามพลาด: คนที่ใช้แอปต้องมี role บนแอปนั้นจริง
+      ขั้นนี้คือขั้นที่ทำให้ permission ทำงานตามที่เอกสาร Meta เขียนไว้
+    </p>
+    <ul class="checks">
+      <li><label class="check"><input type="checkbox" data-k="m-transfer"><span>โอนแอปเข้า Business Manager ของเรา</span></label></li>
+      <li><label class="check"><input type="checkbox" data-k="m-role"><span>เชิญลูกค้าเป็น role บนแอป (Admin / Developer / Tester) แล้วให้ลูกค้ากดรับคำเชิญ</span></label></li>
+      <li><label class="check"><input type="checkbox" data-k="m-su"><span>สร้าง System User ใน Business Manager ของลูกค้า · role <b>Employee</b> พอ ไม่ต้อง Admin</span></label></li>
+      <li><label class="check"><input type="checkbox" data-k="m-assets"><span>Assign Assets ให้ System User เฉพาะเพจ + บัญชี Instagram ที่จะใช้</span></label></li>
+    </ul>
+  </div>
+</section>
+
+<section class="step">
+  <span class="step-n">03</span>
+  <div>
+    <h2>ออก token แล้วตรวจก่อนใช้</h2>
+    <p>
+      Generate token → เลือกแอปที่โอนมา → expiration <b>Never</b> → เลือก 5 permission นี้
+      แล้ว<b>คัดลอกทันที Facebook แสดงให้เห็นครั้งเดียว</b>
+    </p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Permission</th><th>ใช้ทำอะไร</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">pages_manage_posts</td><td>โพสต์ลงเพจ Facebook</td></tr>
+          <tr><td class="mono">pages_read_engagement</td><td>อ่านผลตอบรับมาแสดงในหน้า /insights</td></tr>
+          <tr><td class="mono">instagram_basic</td><td>มองเห็นบัญชี Instagram ที่ผูกกับเพจ</td></tr>
+          <tr><td class="mono">instagram_business_content_publish</td><td>โพสต์ลง Instagram</td></tr>
+          <tr><td class="mono">business_management</td><td>อ่านโครงสร้าง Business Manager</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="note" data-kind="warn">
+      <b>ชื่อ scope ตัว Instagram ยังไม่ยืนยัน</b> — สเปกเดิมบอกว่า <code>instagram_content_publish</code>
+      ถูกแทนที่ด้วย <code>instagram_business_content_publish</code> ตั้งแต่ ม.ค. 2025 แต่ยังไม่เคยตรวจกับ
+      permission reference โดยตรง ถ้าตอน generate ไม่เห็นชื่อนี้ ให้ใช้ชื่อที่ Meta แสดงจริง
+      แล้วบอกผมเพื่ออัปเดตเอกสาร
+    </div>
+    <h3>ตรวจ token ก่อนเอาไปใช้ — อ่านอย่างเดียว ไม่โพสต์อะไร</h3>
+    <div class="cmd">
+      <pre>docker compose exec web npm run verify-meta -- --token "EAAG..." --page &lt;page-id&gt;</pre>
+      <button type="button" class="copy">คัดลอก</button>
+    </div>
+    <p style="font-size: 13.5px">
+      สคริปต์จะบอกว่า token มี scope อะไรจริง หมดอายุไหม และมองเห็นเพจไหม —
+      ตอบคำถามเรื่องชื่อ scope ข้างบนไปในตัว
+    </p>
+    <ul class="checks">
+      <li><label class="check"><input type="checkbox" data-k="t-gen"><span>ออก token แบบ Never expire แล้ว</span></label></li>
+      <li><label class="check"><input type="checkbox" data-k="t-verify"><span>รัน verify-meta แล้วเห็นเพจ + scope ครบ</span></label></li>
+    </ul>
+  </div>
+</section>
+
+<section class="step">
+  <span class="step-n">04</span>
+  <div>
+    <h2>เก็บ token เข้าระบบ</h2>
+    <p>
+      token ถูกเข้ารหัส AES-256-GCM ก่อนลงฐานข้อมูลเสมอ คีย์อยู่ใน env ไม่เคยอยู่ในตาราง
+      วิธีที่ง่ายที่สุดคือหน้า <code>/settings → เชื่อมต่อเพจใหม่</code> ซึ่งเข้ารหัสให้อัตโนมัติ
+      ถ้าจะทำจากบรรทัดคำสั่ง:
+    </p>
+    <div class="cmd">
+      <pre>docker compose exec web npx tsx -e "
+  import { seal } from './src/lib/crypto.js';
+  console.log(JSON.stringify(seal(process.argv[1])));
+" 'TOKEN_ที่คัดลอกมา'</pre>
+      <button type="button" class="copy">คัดลอก</button>
+    </div>
+    <div class="note" data-kind="bad">
+      <b>ห้ามเปลี่ยน <code>ENCRYPTION_KEY_HEX</code> หลังจากนี้เด็ดขาด</b> — เปลี่ยนเมื่อไหร่
+      token ของทุกเพจที่เก็บไว้จะถอดไม่ออกอีกเลย ต้องไปออก token ใหม่ทั้งหมด
+    </div>
+    <ul class="checks">
+      <li><label class="check"><input type="checkbox" data-k="t-store"><span>เก็บ token เข้า meta_credentials และผูกกับเพจแล้ว</span></label></li>
+      <li><label class="check"><input type="checkbox" data-k="t-check"><span>กด “ตรวจเดี๋ยวนี้” ที่ /settings แล้วขึ้นว่าใช้ได้</span></label></li>
+    </ul>
+  </div>
+</section>
+
+<section class="step">
+  <span class="step-n">05</span>
+  <div>
+    <h2>ตั้งค่าเซิร์ฟเวอร์ให้ Meta เข้าถึงได้</h2>
+    <p>
+      Instagram ไม่รับไฟล์อัปโหลด รับแต่ <code>image_url</code> ที่เปิดจากอินเทอร์เน็ตได้จริง —
+      <code>localhost</code> ใช้ไม่ได้ และรูปต้องไม่หายไปพร้อมเครื่อง
+    </p>
+    <div class="cmd">
+      <pre># .env บนเครื่องจริง
+PUBLIC_BASE_URL=https://post.ร้านลูกค้า.com
+
+STORAGE_DRIVER=s3
+S3_ENDPOINT=https://&lt;account&gt;.r2.cloudflarestorage.com
+S3_BUCKET=post-scheduler
+S3_ACCESS_KEY=...
+S3_SECRET_KEY=...</pre>
+      <button type="button" class="copy">คัดลอก</button>
+    </div>
+    <p style="font-size: 13.5px">ยังไม่มีโดเมน ใช้ tunnel ชั่วคราวทดสอบก่อนได้:</p>
+    <div class="cmd">
+      <pre>cloudflared tunnel --url http://localhost:3000</pre>
+      <button type="button" class="copy">คัดลอก</button>
+    </div>
+    <ul class="checks">
+      <li><label class="check"><input type="checkbox" data-k="s-url"><span>PUBLIC_BASE_URL เป็น HTTPS ที่เปิดจากมือถือนอกบ้านได้</span></label></li>
+      <li><label class="check"><input type="checkbox" data-k="s-s3"><span>STORAGE_DRIVER=s3 และอัปโหลดรูปทดสอบแล้วเปิด URL ได้</span></label></li>
+    </ul>
+  </div>
+</section>
+
+<section class="step">
+  <span class="step-n">06</span>
+  <div>
+    <h2>ต่อแจ้งเตือนและตัวเฝ้า worker</h2>
+    <p>
+      ข้อนี้ไม่ใช่ของประดับ — worker ที่ตายแล้วส่งข้อความบอกว่าตัวเองตายไม่ได้
+      ต้องให้บริการภายนอกสังเกตว่า “ปิงหายไป” แทน
+      (LINE Notify ปิดบริการไปแล้ว 31 มี.ค. 2025 ระบบนี้ใช้ Messaging API)
+    </p>
+    <div class="cmd">
+      <pre>NOTIFY_TRANSPORT=line
+WORKER_HEARTBEAT_URL=https://hc-ping.com/xxxxxxxx</pre>
+      <button type="button" class="copy">คัดลอก</button>
+    </div>
+    <ul class="checks">
+      <li><label class="check"><input type="checkbox" data-k="n-line"><span>เพิ่มช่องทาง LINE ที่ /settings แล้วกด “ทดสอบส่ง” จนได้รับข้อความจริง</span></label></li>
+      <li><label class="check"><input type="checkbox" data-k="n-hb"><span>ตั้ง uptime monitor แล้วเห็นปิงเข้ามาจริง</span></label></li>
+    </ul>
+  </div>
+</section>
+
+<section class="step">
+  <span class="step-n">07</span>
+  <div>
+    <h2>สลับเป็นของจริง แล้วยิงทดสอบ 1 โพสต์</h2>
+    <p>
+      ขั้นนี้คือจุดที่ระบบเริ่มโพสต์ลงเพจจริง ทำหลังจาก 1–6 ผ่านหมดแล้วเท่านั้น
+    </p>
+    <div class="cmd">
+      <pre>DEFAULT_PROVIDER=meta
+META_APP_SECRET=...</pre>
+      <button type="button" class="copy">คัดลอก</button>
+    </div>
+    <div class="cmd">
+      <pre>docker compose exec web npm run readiness    # ต้องไม่เหลือข้อ "ยังไม่ได้"
+docker compose exec web npm run smoke       # ต้องผ่านทั้งหมด
+curl -s https://&lt;โดเมนจริง&gt;/api/health      # ต้องได้ ok:true</pre>
+      <button type="button" class="copy">คัดลอก</button>
+    </div>
+    <p style="font-size: 13.5px">
+      แล้วตั้งโพสต์จริง 1 ชิ้น เวลาอีก 5 นาที ดูว่าขึ้นบนเพจจริง —
+      นี่คือหลักฐานเดียวที่นับได้ว่าเชื่อมสำเร็จ
+    </p>
+    <ul class="checks">
+      <li><label class="check"><input type="checkbox" data-k="g-flip"><span>ตั้ง DEFAULT_PROVIDER=meta แล้ว deploy ใหม่</span></label></li>
+      <li><label class="check"><input type="checkbox" data-k="g-post"><span>โพสต์ทดสอบขึ้นเพจ Facebook จริงแล้ว</span></label></li>
+      <li><label class="check"><input type="checkbox" data-k="g-ig"><span>โพสต์ทดสอบขึ้น Instagram จริงแล้ว</span></label></li>
+    </ul>
+  </div>
+</section>
+
+<section class="step">
+  <span class="step-n">08</span>
+  <div>
+    <h2>เก็บกวาดก่อนส่งมอบ</h2>
+    <p>
+      ข้อแรกคือช่องโหว่จริง ไม่ใช่ความเรียบร้อย — บัญชีตัวอย่างมีรหัสผ่านที่เขียนอยู่ใน README
+    </p>
+    <div class="cmd">
+      <pre>docker compose exec web npm run reset-demo   # ล้างโพสต์/แจ้งเตือน/ฟีดจำลอง</pre>
+      <button type="button" class="copy">คัดลอก</button>
+    </div>
+    <ul class="checks">
+      <li><label class="check"><input type="checkbox" data-k="c-owner"><span>สร้างบัญชีเจ้าของจริง แล้ว<b>ลบ owner@example.com ทิ้ง</b></span></label></li>
+      <li><label class="check"><input type="checkbox" data-k="c-demo"><span>รัน reset-demo ล้างข้อมูลตัวอย่างออก</span></label></li>
+      <li><label class="check"><input type="checkbox" data-k="c-team"><span>ตั้งสิทธิ์ทีมงานให้ตรงกับความจริง (ดูตารางล่าง)</span></label></li>
+      <li><label class="check"><input type="checkbox" data-k="c-backup"><span>ตั้ง backup ฐานข้อมูล</span></label></li>
+    </ul>
+    <h3>สิทธิ์ในระบบ 3 ระดับ</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>ระดับ</th><th>ทำได้</th><th>ทำไม่ได้</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="mono">owner</td>
+            <td>ทุกอย่าง — เชื่อม/ตัดเพจ เปลี่ยน token จัดการทีม ตั้งค่าอนุมัติ</td>
+            <td>—</td>
+          </tr>
+          <tr>
+            <td class="mono">approver</td>
+            <td>เขียนโพสต์ และอนุมัติงานคนอื่น</td>
+            <td>แตะเพจ token หรือทีมงานไม่ได้</td>
+          </tr>
+          <tr>
+            <td class="mono">editor</td>
+            <td>เขียนโพสต์ — งานเข้าคิวรออนุมัติก่อนขึ้นเพจ</td>
+            <td>อนุมัติงานตัวเองไม่ได้</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section class="step">
+  <span class="step-n">09</span>
+  <div>
+    <h2>รู้ล่วงหน้าว่าอะไรจะพัง</h2>
+    <p>
+      System User token ตั้ง “Never expire” ได้จริงตามเอกสาร
+      แต่<b>เงื่อนไขที่ทำให้มันพัง Meta ไม่ได้เขียนไว้ที่ไหน</b> — เปลี่ยนรหัสผ่าน · ปิด 2FA ·
+      Business Manager ถูกระงับ · ลูกค้าเพิกถอนสิทธิ์ ล้วนทำให้ token ตายได้
+      ระบบจึงถือว่ามันพังได้เสมอ
+    </p>
+    <div class="note" data-kind="ok">
+      <b>สิ่งที่ระบบทำให้เองเมื่อ token ตาย (error 190)</b> — ตั้งสถานะ credential เป็น invalid ·
+      หยุดส่งโพสต์ของเพจนั้นทันทีแทนที่จะ retry จนโควตาหมด · แจ้งเตือนระดับ critical ·
+      <code>/api/health</code> ตอบ 503 ให้ uptime monitor เห็น
+    </div>
+    <p style="font-size: 13.5px">
+      วิธีแก้: ออก token ใหม่ (ทำขั้น 3–4 ซ้ำ) แล้วกด “ส่งเฉพาะช่องทางที่ล้ม” คิวที่ค้างจะเดินต่อเอง
+    </p>
+  </div>
+</section>
+
+<footer>
+  หน้านี้อ้างอิงจาก <code>docs/onboarding-runbook.md</code> · <code>docs/deploy.md</code> ·
+  <code>docs/decisions.md</code> ในโปรเจกต์ ตัวเลขสถานะด้านบนมาจาก
+  <code>npm run readiness</code> รอบล่าสุด (5 ก.ย. 2026) — รันใหม่ได้ทุกเมื่อ ตัวเลขจะอัปเดตตามจริง
+  เครื่องหมายถูกที่ติ๊กไว้เก็บอยู่ในเบราว์เซอร์เครื่องนี้เท่านั้น
+</footer>
+
+</div>
+
+<script>
+  (function () {
+    const boxes = Array.from(document.querySelectorAll('input[type="checkbox"][data-k]'));
+    const fill = document.getElementById('fill');
+    const count = document.getElementById('count');
+    const KEY = 'go-live-checks';
+
+    function load() {
+      try {
+        return JSON.parse(localStorage.getItem(KEY) || '{}') || {};
+      } catch (e) {
+        return {};
+      }
+    }
+
+    function save(state) {
+      try {
+        localStorage.setItem(KEY, JSON.stringify(state));
+      } catch (e) {
+        /* โหมดส่วนตัวหรือปิดการเก็บข้อมูล — หน้ายังใช้ได้ แค่ไม่จำข้ามการรีเฟรช */
+      }
+    }
+
+    function paint() {
+      const done = boxes.filter((b) => b.checked).length;
+      count.textContent = done + ' / ' + boxes.length;
+      fill.style.width = (boxes.length ? (done / boxes.length) * 100 : 0) + '%';
+    }
+
+    const state = load();
+    boxes.forEach((b) => {
+      b.checked = state[b.dataset.k] === true;
+      b.addEventListener('change', function () {
+        const s = load();
+        s[b.dataset.k] = b.checked;
+        save(s);
+        paint();
+      });
+    });
+    paint();
+
+    document.getElementById('reset').addEventListener('click', function () {
+      boxes.forEach((b) => { b.checked = false; });
+      save({});
+      paint();
+    });
+
+    document.querySelectorAll('.copy').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        const text = btn.parentElement.querySelector('pre').textContent;
+        navigator.clipboard.writeText(text).then(function () {
+          const was = btn.textContent;
+          btn.textContent = 'คัดลอกแล้ว';
+          setTimeout(function () { btn.textContent = was; }, 1400);
+        }).catch(function () {
+          btn.textContent = 'คัดลอกไม่ได้';
+        });
+      });
+    });
+  })();
+</script>
