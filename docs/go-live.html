@@ -348,16 +348,27 @@
           <tr><td class="mono">pages_manage_posts</td><td>โพสต์ลงเพจ Facebook</td></tr>
           <tr><td class="mono">pages_read_engagement</td><td>อ่านผลตอบรับมาแสดงในหน้า /insights</td></tr>
           <tr><td class="mono">instagram_basic</td><td>มองเห็นบัญชี Instagram ที่ผูกกับเพจ</td></tr>
-          <tr><td class="mono">instagram_business_content_publish</td><td>โพสต์ลง Instagram</td></tr>
+          <tr><td class="mono">instagram_content_publish</td><td>โพสต์ลง Instagram</td></tr>
           <tr><td class="mono">business_management</td><td>อ่านโครงสร้าง Business Manager</td></tr>
         </tbody>
       </table>
     </div>
     <div class="note" data-kind="warn">
-      <b>ชื่อ scope ตัว Instagram ยังไม่ยืนยัน</b> — สเปกเดิมบอกว่า <code>instagram_content_publish</code>
-      ถูกแทนที่ด้วย <code>instagram_business_content_publish</code> ตั้งแต่ ม.ค. 2025 แต่ยังไม่เคยตรวจกับ
-      permission reference โดยตรง ถ้าตอน generate ไม่เห็นชื่อนี้ ให้ใช้ชื่อที่ Meta แสดงจริง
-      แล้วบอกผมเพื่ออัปเดตเอกสาร
+      <b>Instagram มีสองเส้นทาง ชื่อ permission คนละชุด</b> — ต้องเลือกให้ถูกตั้งแต่ตอนเพิ่ม product
+      ไม่งั้นจะหา permission ที่ต้องใช้ไม่เจอเลยในหน้า Permissions
+      <table style="margin-top: 9px; min-width: 0">
+        <tr>
+          <td style="border: none; padding: 4px 0"><b>with Facebook Login</b> ← ระบบนี้ใช้เส้นนี้</td>
+          <td style="border: none; padding: 4px 0" class="mono">instagram_basic · instagram_content_publish</td>
+        </tr>
+        <tr>
+          <td style="border: none; padding: 4px 0">with Instagram Login</td>
+          <td style="border: none; padding: 4px 0" class="mono">instagram_business_basic · instagram_business_content_publish</td>
+        </tr>
+      </table>
+      <code>instagram_business_content_publish</code> ไม่ใช่ชื่อใหม่ของ
+      <code>instagram_content_publish</code> — คนละเส้นทางกัน
+      (ยืนยันกับเอกสาร Content Publishing ของ Meta เมื่อ 6 ก.ย. 2026)
     </div>
     <h3>ตรวจ token ก่อนเอาไปใช้ — อ่านอย่างเดียว ไม่โพสต์อะไร</h3>
     <div class="cmd">
@@ -369,6 +380,7 @@
       ตอบคำถามเรื่องชื่อ scope ข้างบนไปในตัว
     </p>
     <ul class="checks">
+      <li><label class="check"><input type="checkbox" data-k="ig-product"><span>เพิ่ม product Instagram แบบ <b>with Facebook Login</b> เข้าแอปแล้ว</span></label></li>
       <li><label class="check"><input type="checkbox" data-k="t-gen"><span>ออก token แบบ Never expire แล้ว</span></label></li>
       <li><label class="check"><input type="checkbox" data-k="t-verify"><span>รัน verify-meta แล้วเห็นเพจ + scope ครบ</span></label></li>
     </ul>

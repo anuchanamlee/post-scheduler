@@ -61,7 +61,7 @@ AI วาดกาแฟสวยได้แต่ไม่ใช่กาแ�
 |---|---|---|
 | System User = role user ใน Dev Mode | ไม่มีในเอกสาร Meta | **มีสคริปต์แล้ว**: `npm run verify-meta -- --token ...` |
 | BOBO ต้อง verify ธุรกิจก่อนไหม | เอกสารเงียบ ไม่ยืนยันทั้งสองทาง | ลองเรียก `managed_businesses` จริง |
-| ชื่อ scope `instagram_business_content_publish` | ยังไม่ยืนยันกับ permission reference | `verify-meta` อ่าน scope จริงจาก `debug_token` ให้ |
+| ~~ชื่อ scope ของ Instagram~~ | **ยืนยันแล้ว 6 ก.ย. 2026** — ดูหัวข้อด้านล่าง | ยังควรรัน `verify-meta` อ่าน scope จริงจาก `debug_token` อยู่ดี |
 | HTTPS บังคับสำหรับ `image_url` ไหม | เอกสารบอกแค่ "publicly accessible" | ใช้ HTTPS ไปเลย ไม่ต้องเสี่ยง |
 | VIDEO → REELS deprecated | ยังไม่ยืนยัน | เช็คก่อนถ้าจะรองรับวิดีโอ |
 | คุณภาพจริงของ gemini-2.5-flash-image กับฉากไทย | **ยังไม่เคยยิงจริงสักครั้ง** — ยังไม่มี OPENROUTER_API_KEY | ตั้ง key แล้วสร้าง 5-10 ใบ ดูว่าฉากออกมาใช้ได้ไหม และมันแอบใส่ตัวอักษรมาจริงไหมทั้งที่สั่งห้าม |
@@ -69,6 +69,18 @@ AI วาดกาแฟสวยได้แต่ไม่ใช่กาแ�
 | โหมด replace-bg รักษาตัวสินค้าได้จริงแค่ไหน | ท่านี้พึ่งความสามารถของโมเดล ไม่ใช่ของเรา | ทดสอบกับรูปสินค้าจริงของลูกค้าก่อนโฆษณาว่าทำได้ |
 
 ## ยืนยันแล้วจากเอกสาร Meta (4 ก.ย. 2026 · v26.0)
+
+- **ชื่อ permission ของ Instagram ขึ้นกับเส้นทางที่เลือก ไม่ใช่ขึ้นกับปีที่ออก** (ยืนยัน 6 ก.ย. 2026)
+  - Instagram API **with Facebook Login** → `instagram_basic` · `instagram_content_publish` · `pages_read_engagement`
+  - Instagram API **with Instagram Login** → `instagram_business_basic` · `instagram_business_content_publish`
+
+  ระบบนี้ใช้เส้นทางแรก เพราะยิงผ่าน System User token ของ Business Manager
+  ที่ถือทั้งเพจและ IG ที่ผูกกับเพจ
+
+  **ความเชื่อเดิมในสเปกผิด**: `instagram_content_publish` ไม่ได้ถูก "แทนที่" ด้วย
+  `instagram_business_content_publish` เมื่อ ม.ค. 2025 — ทั้งคู่ยังมีอยู่ คนละเส้นทางกัน
+  อาการเวลาเข้าใจผิด: เพิ่ม product ผิดเส้นแล้วหา permission ในหน้า App Dashboard ไม่เจอเลย
+  ที่มา: https://developers.facebook.com/documentation/instagram-platform/content-publishing
 
 - Development Mode + role user = ไม่ต้อง App Review และไม่ต้อง Business Verification
 - System User token ตั้งไม่หมดอายุได้จริง แต่**เงื่อนไขที่ทำให้พัง Meta ไม่ได้เขียนไว้**

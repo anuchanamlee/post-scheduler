@@ -25,7 +25,7 @@ docker compose exec web npm run verify-meta -- \
 
 สคริปต์อ่านอย่างเดียว ไม่โพสต์อะไร และไม่พิมพ์ token ลง log
 บอกให้ครบว่า token ชนิดไหน · มีวันหมดอายุไหม · **มี scope อะไรบ้างจริงๆ**
-(ตอบข้อ A5 เรื่องชื่อ `instagram_business_content_publish` ไปในตัว) ·
+(ตอบข้อ A5 เรื่องชื่อ scope ของ Instagram ไปในตัว) ·
 มองเห็นเพจไหม · เพจผูก IG แล้วหรือยัง · โควตา IG เหลือเท่าไหร่
 
 อยากพิสูจน์ให้จบว่าโพสต์ได้จริง เพิ่ม `--post --image <url สาธารณะ>`
@@ -81,11 +81,21 @@ Business Settings ของลูกค้า → Users → **System Users** →
 ### 6. สร้าง token
 กด **Generate token** → เลือกแอปที่โอนมา → expiration **Never** → เลือก permission:
 `pages_manage_posts` · `pages_read_engagement` · `instagram_basic` ·
-`instagram_business_content_publish` · `business_management`
+`instagram_content_publish` · `business_management`
 
-> **ตรวจชื่อ scope ก่อนใช้จริง** — สเปกเดิมระบุว่า `instagram_content_publish` ถูกแทนที่
-> ด้วย `instagram_business_content_publish` ตั้งแต่ ม.ค. 2025 แต่ยังไม่ได้ยืนยันกับหน้า
-> permission reference โดยตรง ถ้า generate token แล้วไม่เห็น scope นี้ ให้ใช้ชื่อที่ Meta แสดง
+> **ยืนยันแล้ว 6 ก.ย. 2026** จากหน้า Content Publishing ของ Meta —
+> Instagram มีสองเส้นทางและ**ใช้ชื่อ permission คนละชุด** ซึ่งเป็นที่มาของความสับสนเดิม:
+>
+> | เส้นทาง | permission |
+> |---|---|
+> | **Instagram API with Facebook Login** ← runbook นี้ใช้เส้นนี้ | `instagram_basic` · `instagram_content_publish` · `pages_read_engagement` |
+> | Instagram API with Instagram Login | `instagram_business_basic` · `instagram_business_content_publish` |
+>
+> `instagram_business_content_publish` **ไม่ใช่ชื่อใหม่ของ** `instagram_content_publish`
+> — คนละเส้นทางกัน ถ้าเลือก product ผิดเส้น จะหา permission ที่ต้องใช้ไม่เจอทั้งชุด
+> ตอนเพิ่ม product ต้องเลือก **Instagram API with Facebook Login** เพราะเรายิงผ่าน
+> System User token ของ Business Manager ที่ถือทั้งเพจและ IG ที่ผูกกับเพจ
+> https://developers.facebook.com/documentation/instagram-platform/content-publishing
 
 **คัดลอก token ทันที — Facebook แสดงให้เห็นครั้งเดียว**
 
