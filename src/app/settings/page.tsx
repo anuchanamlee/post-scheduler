@@ -104,12 +104,28 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
 
       {typeof sp.flash === 'string' && <Flash code={sp.flash} />}
 
+      {/* ทางลัดไปแต่ละหมวด — หน้านี้ยาวพอที่จะเลื่อนหาไม่เจอ */}
+      <nav className="settings-jump" aria-label="ทางลัดไปหมวดตั้งค่า">
+        {[
+          ['pages', 'เพจที่เชื่อมต่อ'],
+          ['schedule', 'ตารางเวลาประจำ'],
+          ['team', 'ทีมงาน'],
+          ['notify', 'แจ้งเตือน'],
+          ['tags', 'ชุดแฮชแท็ก'],
+          ['voice', 'โทนเสียง'],
+          ['quota', 'โควตา AI'],
+          ['account', 'บัญชีของฉัน'],
+        ].map(([id, label]) => (
+          <a key={id} className="btn btn-sm" href={`#${id}`}>{label}</a>
+        ))}
+      </nav>
+
       <div className="settings">
         {/* ตารางเวลาประจำ — ของที่ทำให้ไม่ต้องคิดเรื่องเวลาใหม่ทุกครั้งที่เขียนโพสต์ */}
         <section className="panel" id="schedule" style={{ gridColumn: '1 / -1' }}>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
             <h2 style={{ margin: 0, fontSize: 14.5 }}>ตารางเวลาประจำ</h2>
-            <span style={{ fontSize: 12.5, color: 'var(--muted)' }}>
+            <span className="hint">
               ตั้งไว้ครั้งเดียว โพสต์ใหม่จะถูกเสนอให้ลงช่องว่างถัดไปเอง
             </span>
           </div>
@@ -121,7 +137,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
                 <div key={wd} className="slot-day" data-empty={mine.length === 0}>
                   <span className="slot-dayname">{name}</span>
                   {mine.length === 0 && (
-                    <span style={{ fontSize: 12, color: 'var(--muted)' }}>ไม่โพสต์</span>
+                    <span className="hint-sm">ไม่โพสต์</span>
                   )}
                   {mine.map((s) => (
                     <form key={s.id} action={removeSlotAction} className="slot-chip">
@@ -160,7 +176,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
         <section className="panel" id="account" style={{ gridColumn: '1 / -1' }}>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
             <h2 style={{ margin: 0, fontSize: 14.5 }}>บัญชีของฉัน</h2>
-            <span className="num" style={{ fontSize: 12.5, color: 'var(--muted)' }}>
+            <span className="num hint">
               {session.email} · {ROLE_LABEL[session.role as Role] ?? session.role}
             </span>
           </div>
@@ -194,7 +210,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
         <section className="panel" id="team" style={{ gridColumn: '1 / -1' }}>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
             <h2 style={{ margin: 0, fontSize: 14.5 }}>ทีมงานและการอนุมัติ</h2>
-            <span style={{ fontSize: 12.5, color: 'var(--muted)' }}>
+            <span className="hint">
               {isOwner ? 'เพิ่มคนช่วยทำคอนเทนต์ได้ โดยยังคุมว่าอะไรขึ้นเพจ'
                        : 'เฉพาะเจ้าของที่แก้ส่วนนี้ได้'}
             </span>
@@ -209,7 +225,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
               <span style={{ fontSize: 13.5, fontWeight: 600 }}>
                 {approvalOn ? 'เปิดขั้นตอนอนุมัติอยู่' : 'ปิดขั้นตอนอนุมัติอยู่'}
               </span>
-              <span style={{ fontSize: 12.5, color: 'var(--muted)' }}>
+              <span className="hint">
                 {approvalOn
                   ? 'โพสต์ของผู้เขียนต้องผ่านการตรวจก่อนถึงจะเข้าคิว'
                   : 'ทุกคนที่มีสิทธิ์เขียน โพสต์เข้าคิวได้ทันที'}
@@ -238,7 +254,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
                     </span>
                   )}
                 </span>
-                <span style={{ fontSize: 12, color: 'var(--muted)' }}>
+                <span className="hint-sm">
                   {ROLE_HINT[u.role as Role] ?? u.role}
                 </span>
               </span>
@@ -311,7 +327,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
         <section className="panel" id="notify" style={{ gridColumn: '1 / -1' }}>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
             <h2 style={{ margin: 0, fontSize: 14.5 }}>แจ้งเตือนเข้า LINE</h2>
-            <span style={{ fontSize: 12.5, color: 'var(--muted)' }}>
+            <span className="hint">
               โพสต์ล้มตอนตี 2 จะได้รู้ทันที ไม่ต้องรอเปิดคอมตอนเช้า
             </span>
           </div>
@@ -333,7 +349,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
               </span>
               <span style={{ display: 'flex', flexDirection: 'column', minWidth: 160 }}>
                 <span style={{ fontSize: 13.5, fontWeight: 600 }}>{c.label}</span>
-                <span className="num" style={{ fontSize: 12, color: 'var(--muted)' }}>
+                <span className="num hint-sm">
                   {c.kind} · {c.destination.slice(0, 12)}…
                 </span>
               </span>
@@ -405,7 +421,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
         <section className="panel" id="pages" style={{ gridColumn: '1 / -1' }}>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
             <h2 style={{ margin: 0, fontSize: 14.5 }}>เพจที่เชื่อมต่อไว้</h2>
-            <span style={{ fontSize: 12.5, color: 'var(--muted)' }}>
+            <span className="hint">
               {isOwner ? 'ใส่ token เองได้จากหน้านี้ ไม่ต้องผ่านฐานข้อมูล'
                        : 'เฉพาะเจ้าของที่แก้ส่วนนี้ได้'}
             </span>
@@ -425,7 +441,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
                   </span>
                   <span style={{ display: 'flex', flexDirection: 'column', minWidth: 170 }}>
                     <span style={{ fontSize: 13.5, fontWeight: 600 }}>{c.display_name}</span>
-                    <span className="num" style={{ fontSize: 12, color: 'var(--muted)' }}>
+                    <span className="num hint-sm">
                       {c.platform === 'instagram' ? 'ig' : 'page'} {c.remote_id}
                     </span>
                   </span>
@@ -443,7 +459,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
                     <span style={{ fontSize: 12.5, color: ok ? 'var(--muted)' : 'var(--bad)' }}>
                       {c.last_error_message ?? 'System User token · ไม่มีวันหมดอายุ'}
                     </span>
-                    <span className="num" style={{ fontSize: 12, color: 'var(--muted)' }}>
+                    <span className="num hint-sm">
                       {c.last_checked_at
                         ? `ตรวจล่าสุด ${fmtDateTime(c.last_checked_at)}`
                         : 'ยังไม่เคยตรวจ'}
@@ -535,7 +551,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
         <section className="panel" id="tags" style={{ gridColumn: '1 / -1' }}>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
             <h2 style={{ margin: 0, fontSize: 14.5 }}>ชุดแฮชแท็ก</h2>
-            <span style={{ fontSize: 12.5, color: 'var(--muted)' }}>
+            <span className="hint">
               ตั้งไว้แล้วกดแทรกได้ตอนเขียนโพสต์ — AI จะเสนอแท็กตามเนื้อหาเพิ่มให้อีกทาง
             </span>
           </div>
@@ -584,7 +600,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
         </section>
 
         {/* โทนเสียงผูกกับเพจ ไม่ใช่กับลูกค้า */}
-        <section className="panel">
+        <section className="panel" id="voice">
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
             <h2 style={{ margin: 0, fontSize: 14.5 }}>โทนเสียงของเพจ</h2>
             <span className="grow" />
@@ -644,7 +660,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
         </section>
 
         {/* เห็นค่าใช้จ่ายก่อนบิลมา */}
-        <section className="panel">
+        <section className="panel" id="quota">
           <h2 style={{ margin: 0, fontSize: 14.5 }}>โควตา AI เดือนนี้</h2>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>

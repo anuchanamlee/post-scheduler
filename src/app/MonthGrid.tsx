@@ -206,7 +206,7 @@ export default function MonthGrid({ days, dows }: { days: MonthDay[]; dows: stri
               </button>
             </div>
 
-            <span style={{ fontSize: 12.5, color: 'var(--muted)' }}>
+            <span className="hint">
               {sheet.post.time} · {sheet.post.caption} — เวลาในวันคงเดิม
             </span>
 
@@ -233,7 +233,7 @@ export default function MonthGrid({ days, dows }: { days: MonthDay[]; dows: stri
             </div>
 
             {targets(sheet.from).length === 0 && (
-              <span style={{ fontSize: 12.5, color: 'var(--muted)' }}>
+              <span className="hint">
                 เดือนนี้ไม่มีวันถัดไปแล้ว — เปิดเดือนถัดไปแล้วลากวางแทน
               </span>
             )}

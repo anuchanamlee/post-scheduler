@@ -104,7 +104,7 @@ export default async function ApprovalsPage({ searchParams }: { searchParams: Pr
 
                 <p style={{ margin: 0, fontSize: 13.5, whiteSpace: 'pre-wrap' }}>{p.caption}</p>
 
-                <span style={{ fontSize: 12, color: 'var(--muted)' }}>
+                <span className="hint-sm">
                   เขียนโดย {p.author ?? 'ไม่ทราบ'} · ส่งตรวจ {fmtDateTime(p.created_at)}
                 </span>
 

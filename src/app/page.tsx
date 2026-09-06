@@ -146,22 +146,22 @@ export default async function QueuePage({ searchParams }: { searchParams: Promis
             <span className="badge-count">{awaiting}</span>
           </a>
         )}
-        <a className="btn" href="/poster">
+        <a className="btn nav-wide" href="/poster">
           <Icon.sparkle />ทำโปสเตอร์
         </a>
-        <a className="btn" href="/image">
+        <a className="btn nav-wide" href="/image">
           <Icon.sparkle />สร้างภาพ AI
         </a>
-        <a className="btn" href="/insights" aria-label="ผลตอบรับ">
+        <a className="btn nav-wide" href="/insights" aria-label="ผลตอบรับ">
           <Icon.chart />
         </a>
-        <a className="btn" href="/library" aria-label="คลังรูป">
+        <a className="btn nav-wide" href="/library" aria-label="คลังรูป">
           <Icon.photo />
         </a>
-        <a className="btn" href="/grid" aria-label="ดูฟีด Instagram">
+        <a className="btn nav-wide" href="/grid" aria-label="ดูฟีด Instagram">
           <Icon.grid />
         </a>
-        <a className="btn" href="/settings" aria-label="การเชื่อมต่อและโทนเสียง">
+        <a className="btn nav-wide" href="/settings" aria-label="การเชื่อมต่อและโทนเสียง">
           <Icon.settings /><span className="only-wide">ตั้งค่า</span>
         </a>
         <a className="btn btn-primary" href="/new"><Icon.plus />เพิ่มโพสต์</a>
@@ -313,7 +313,7 @@ export default async function QueuePage({ searchParams }: { searchParams: Promis
                     <span className="d-dow">{dow}</span>
                     <span className="d-num num">{Number(iso.slice(8))}</span>
                   </span>
-                  <span style={{ fontSize: 12, color: 'var(--muted)' }}>
+                  <span className="hint-sm">
                     {c ? `${c.total} โพสต์` : '—'}
                   </span>
                 </a>
@@ -325,7 +325,7 @@ export default async function QueuePage({ searchParams }: { searchParams: Promis
               padding: '14px 16px', borderTop: '1px solid var(--line)',
               display: 'flex', flexDirection: 'column', gap: 7,
             }}>
-              <span style={{ fontSize: 12, color: 'var(--muted)' }}>โควตา Instagram 24 ชม.</span>
+              <span className="hint-sm">โควตา Instagram 24 ชม.</span>
               <span className="progress">
                 <span style={{
                   width: `${Math.min(100, (igUsed / igQuota.limit) * 100)}%`,
@@ -333,7 +333,7 @@ export default async function QueuePage({ searchParams }: { searchParams: Promis
                     : isQuotaLow(igQuota) ? 'var(--warn)' : 'var(--accent)',
                 }} />
               </span>
-              <span className="num" style={{ fontSize: 12, color: 'var(--muted)' }}>
+              <span className="num hint-sm">
                 {igUsed} / {igQuota.limit} โพสต์
               </span>
             </div>
@@ -406,8 +406,10 @@ export default async function QueuePage({ searchParams }: { searchParams: Promis
             post={selected}
             canApproveHere={canApprove(session.role)}
             /* บนมือถือแผงนี้เป็นแผงเลื่อนขึ้น จะเปิดต่อเมื่อผู้ใช้แตะโพสต์เอง
-               ไม่ใช่เปิดค้างเพราะระบบเลือกโพสต์แรกให้ */
-            picked={typeof sp.post === 'string'}
+               ไม่ใช่เปิดค้างเพราะระบบเลือกโพสต์แรกให้
+               และต้องเป็นโพสต์ "ตัวที่ลิงก์ชี้มาจริงๆ" ด้วย — ลิงก์เก่าที่โพสต์ถูกลบไปแล้ว
+               จะ fallback ไปโพสต์แรกของวัน ถ้ายังเปิดแผงค้างไว้ คนจะกดยกเลิกผิดตัว */
+            picked={sp.post === selected.id}
             closeHref={href({})}
           />
         )}
@@ -468,7 +470,7 @@ function Detail({ post, canApproveHere, picked, closeHref }: {
         </p>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--muted)' }}>ปลายทาง</span>
+          <span className="section-label">ปลายทาง</span>
           {post.targets.map((t, i) => (
             <div key={i} style={{
               display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px',

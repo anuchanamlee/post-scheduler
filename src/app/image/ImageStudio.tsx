@@ -105,7 +105,7 @@ export default function ImageStudio({
           {current.needsRef && (
             <div className="field">
               <span className="label">รูปสินค้าจริง</span>
-              <span style={{ fontSize: 12.5, color: 'var(--muted)' }}>
+              <span className="hint">
                 ตัวสินค้าในรูปนี้จะถูกเก็บไว้ เปลี่ยนแค่ฉากหลังรอบตัวมัน — ต้นฉบับไม่ถูกแก้
               </span>
               <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start', flexWrap: 'wrap' }}>
@@ -143,7 +143,7 @@ export default function ImageStudio({
             <span className="label">อธิบายภาพที่อยากได้</span>
             <textarea rows={3} value={topic} onChange={(e) => setTopic(e.target.value)}
                       placeholder={EXAMPLES[mode] ?? ''} maxLength={600} />
-            <span style={{ fontSize: 12, color: 'var(--muted)' }}>
+            <span className="hint-sm">
               บอกของ · แสง · โทนสี · มุมมอง ให้ครบจะได้ผลตรงที่สุด
               ไม่ต้องสั่งเรื่องตัวหนังสือ ระบบสั่งห้ามไว้ให้แล้ว
             </span>
@@ -167,7 +167,7 @@ export default function ImageStudio({
 
           <div className="actions-bar">
             {busy && (
-              <span style={{ fontSize: 12.5, color: 'var(--muted)' }}>
+              <span className="hint">
                 กำลังสร้างภาพ… ใช้เวลาราว 10–30 วินาที
               </span>
             )}
@@ -224,7 +224,7 @@ export default function ImageStudio({
                   </a>
                 ))}
               </div>
-              <span style={{ fontSize: 12, color: 'var(--muted)' }}>
+              <span className="hint-sm">
                 กดที่รูปเพื่อเอาไปใส่ข้อความที่หน้าโปสเตอร์
               </span>
             </div>

@@ -93,7 +93,7 @@ function Row({ n }: {
       <span style={{ flexGrow: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 3 }}>
         <span style={{ fontSize: 13.5, fontWeight: 600 }}>{n.title}</span>
         {n.body && <span style={{ fontSize: 13, color: 'var(--muted)' }}>{n.body}</span>}
-        <span className="num" style={{ fontSize: 12, color: 'var(--muted)' }}>
+        <span className="num hint-sm">
           {fmtDateTime(n.created_at)}
           {n.read_at && ' · อ่านแล้ว'}
         </span>

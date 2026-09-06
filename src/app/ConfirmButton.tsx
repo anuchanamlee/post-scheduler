@@ -26,7 +26,7 @@ export default function ConfirmButton({
 
   return (
     <span style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-      <span style={{ fontSize: 12.5, color: 'var(--muted)' }}>{question}</span>
+      <span className="hint">{question}</span>
       <button className={className}>{confirmLabel}</button>
       <button type="button" className="btn btn-sm" onClick={() => setAsking(false)}>
         ไม่ใช่

@@ -108,7 +108,7 @@ export default function PosterStudio({
         <a className="btn" href="/" aria-label="กลับไปหน้าคิว"><Icon.back /></a>
         <span style={{ fontWeight: 700, fontSize: 15 }}>ทำโปสเตอร์สินค้า</span>
         <span className="grow" />
-        <span style={{ fontSize: 12.5, color: 'var(--muted)' }}>
+        <span className="hint">
           ตัวหนังสือไทยใช้ฟอนต์จริง คมชัดทุกตัว
         </span>
       </header>
@@ -141,7 +141,7 @@ export default function PosterStudio({
           {/* 2 · รูปสินค้าจริง */}
           <div className="field">
             <span className="label">รูปสินค้า</span>
-            <span style={{ fontSize: 12.5, color: 'var(--muted)' }}>
+            <span className="hint">
               ถ่ายสินค้าจริงของร้านมาได้เลย ระบบจัดวางให้เอง — ไม่ใส่ก็ได้ จะเป็นโปสเตอร์ข้อความล้วน
             </span>
             <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start', flexWrap: 'wrap' }}>
@@ -161,7 +161,7 @@ export default function PosterStudio({
             {/* ให้ AI สร้างฉากพื้นหลัง — ใช้แทนรูปสินค้าได้เมื่อโพสต์นั้นไม่มีสินค้าให้ถ่าย */}
             <div className="ai-scene">
               <span style={{ fontSize: 13, fontWeight: 600 }}>ไม่มีรูป? ให้ AI สร้างฉากให้</span>
-              <span style={{ fontSize: 12.5, color: 'var(--muted)' }}>
+              <span className="hint">
                 เหมาะกับประกาศ วันหยุด หรือโปรที่ไม่มีตัวสินค้า —
                 ถ้าเป็นโพสต์ขายของ ใช้รูปสินค้าจริงยังได้ผลกว่าเสมอ
               </span>
@@ -175,8 +175,8 @@ export default function PosterStudio({
                 </button>
               </div>
               {aiError && <p className="msg bad" style={{ margin: 0 }}>{aiError}</p>}
-              {aiNote && <span style={{ fontSize: 12, color: 'var(--muted)' }}>{aiNote}</span>}
-              <span style={{ fontSize: 12, color: 'var(--muted)' }}>
+              {aiNote && <span className="hint-sm">{aiNote}</span>}
+              <span className="hint-sm">
                 อยากเปลี่ยนแค่พื้นหลังของรูปสินค้าจริง หรือทำภาพประกอบโพสต์ →{' '}
                 <a href="/image">หน้าสร้างภาพด้วย AI</a>
               </span>
@@ -197,7 +197,7 @@ export default function PosterStudio({
                   required={f === 'headline'}
                 />
                 {FIELD_HINT[f] && (
-                  <span style={{ fontSize: 12, color: 'var(--muted)' }}>{FIELD_HINT[f]}</span>
+                  <span className="hint-sm">{FIELD_HINT[f]}</span>
                 )}
               </label>
             ))}
@@ -219,7 +219,7 @@ export default function PosterStudio({
 
           <div className="actions-bar">
             {busy && (
-              <span style={{ fontSize: 12.5, color: 'var(--muted)' }}>กำลังประกอบโปสเตอร์…</span>
+              <span className="hint">กำลังประกอบโปสเตอร์…</span>
             )}
             <span className="grow" />
             <button className="btn btn-primary" style={{ height: 40, padding: '0 22px' }}
@@ -269,7 +269,7 @@ export default function PosterStudio({
                   </button>
                 ))}
               </div>
-              <span style={{ fontSize: 12, color: 'var(--muted)' }}>
+              <span className="hint-sm">
                 กดที่รูปเพื่อดึงแบบและข้อความเดิมกลับมาแก้
               </span>
             </div>

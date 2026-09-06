@@ -40,7 +40,7 @@ export default async function LibraryPage({ searchParams }: { searchParams: Prom
         <a className="btn" href="/" aria-label="กลับไปหน้าคิว"><Icon.back /></a>
         <span style={{ fontWeight: 700, fontSize: 15 }}>คลังรูป</span>
         <span className="grow" />
-        <span className="num" style={{ fontSize: 12.5, color: 'var(--muted)' }}>
+        <span className="num hint">
           {counts.total} ไฟล์ · {humanBytes(counts.bytes)}
         </span>
       </header>
@@ -82,11 +82,11 @@ export default async function LibraryPage({ searchParams }: { searchParams: Prom
                 </a>
 
                 <div className="lib-meta">
-                  <span className="num" style={{ fontSize: 12, color: 'var(--muted)' }}>
+                  <span className="num hint-sm">
                     {it.width} × {it.height}
                     {it.bytes ? ` · ${humanBytes(Number(it.bytes))}` : ''}
                   </span>
-                  <span style={{ fontSize: 12, color: 'var(--muted)' }}>
+                  <span className="hint-sm">
                     {fmtDateTime(it.created_at)}
                   </span>
 

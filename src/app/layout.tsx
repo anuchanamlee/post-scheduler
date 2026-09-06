@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import './globals.css';
+import BottomNav from './BottomNav.js';
 
 export const metadata = {
   title: 'คิวโพสต์',
@@ -22,7 +23,11 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap"
         />
       </head>
-      <body>{children}</body>
+      <body>
+        {children}
+        {/* มีเฉพาะจอแคบ — ดู .bottom-nav ใน globals.css */}
+        <BottomNav />
+      </body>
     </html>
   );
 }

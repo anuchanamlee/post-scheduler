@@ -43,7 +43,7 @@ export default async function CropPage({
         <a className="btn" href="/library" aria-label="กลับไปคลังรูป"><Icon.back /></a>
         <span style={{ fontWeight: 700, fontSize: 15 }}>เลือกกรอบครอป</span>
         <span className="grow" />
-        <span style={{ fontSize: 12.5, color: 'var(--muted)' }}>
+        <span className="hint">
           {asset.original_name ?? 'รูปในคลัง'}
         </span>
       </header>

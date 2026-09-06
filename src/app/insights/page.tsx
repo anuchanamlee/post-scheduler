@@ -38,7 +38,7 @@ export default async function InsightsPage() {
         <a className="btn" href="/" aria-label="กลับไปหน้าคิว"><Icon.back /></a>
         <span style={{ fontWeight: 700, fontSize: 15 }}>ผลตอบรับ</span>
         <span className="grow" />
-        <span style={{ fontSize: 12.5, color: 'var(--muted)' }}>
+        <span className="hint">
           {withData.length ? `มีข้อมูล ${withData.length} โพสต์` : 'ยังไม่มีข้อมูล'}
         </span>
       </header>
@@ -56,7 +56,7 @@ export default async function InsightsPage() {
               <section className="panel">
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, flexWrap: 'wrap' }}>
                   <h2 style={{ margin: 0, fontSize: 14.5 }}>ช่วงเวลาที่ได้ผลดีที่สุด</h2>
-                  <span style={{ fontSize: 12.5, color: 'var(--muted)' }}>
+                  <span className="hint">
                     วัดจากยอดเข้าถึงเฉลี่ยใน 24 ชั่วโมงแรก
                   </span>
                 </div>
@@ -77,7 +77,7 @@ export default async function InsightsPage() {
                       <span className="num" style={{ fontSize: 12.5 }}>
                         {num(Number(h.avg_reach))} คนเห็น
                       </span>
-                      <span style={{ fontSize: 12, color: 'var(--muted)' }}>
+                      <span className="hint-sm">
                         จาก {h.posts} โพสต์
                       </span>
                     </div>
@@ -101,7 +101,7 @@ export default async function InsightsPage() {
                   }}>
                     <div style={{ display: 'flex', gap: 9, alignItems: 'center', flexWrap: 'wrap' }}>
                       <span className="pill">{p.page_name}</span>
-                      <span className="num" style={{ fontSize: 12.5, color: 'var(--muted)' }}>
+                      <span className="num hint">
                         {fmtDateTime(p.scheduled_at)}
                       </span>
                       {p.permalink && (
@@ -136,7 +136,7 @@ export default async function InsightsPage() {
                                 )}
                               </span>
                             ) : (
-                              <span style={{ fontSize: 12, color: 'var(--muted)' }}>
+                              <span className="hint-sm">
                                 ยังไม่ถึงเวลาเก็บ
                               </span>
                             )}

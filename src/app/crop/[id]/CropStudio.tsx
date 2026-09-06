@@ -81,7 +81,7 @@ export default function CropStudio({
 
         <div className="field">
           <span className="label">คลิกตรงจุดที่ต้องให้อยู่ในกรอบ</span>
-          <span style={{ fontSize: 12.5, color: 'var(--muted)' }}>
+          <span className="hint">
             เช่น หน้าคน หรือตัวสินค้า — กรอบสีจะเลื่อนตาม
           </span>
 
@@ -102,13 +102,13 @@ export default function CropStudio({
             />
           </div>
 
-          <span className="num" style={{ fontSize: 12, color: 'var(--muted)' }}>
+          <span className="num hint-sm">
             ต้นฉบับ {width} × {height} · จะได้ {spec.w} × {spec.h}
           </span>
         </div>
 
         <div className="actions-bar">
-          {busy && <span style={{ fontSize: 12.5, color: 'var(--muted)' }}>กำลังครอป…</span>}
+          {busy && <span className="hint">กำลังครอป…</span>}
           <span className="grow" />
           <button type="button" className="btn" onClick={() => setFocus({ x: 0.5, y: 0.5 })}>
             กลับไปกึ่งกลาง

@@ -191,7 +191,7 @@ export default function Composer({
                   </span>
                   <span style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
                     <span style={{ fontSize: 13, fontWeight: 500 }}>{p.display_name}</span>
-                    <span style={{ fontSize: 12, color: 'var(--muted)' }}>
+                    <span className="hint-sm">
                       {p.platform === 'instagram' ? 'Instagram' : 'Facebook'}
                     </span>
                   </span>
@@ -283,7 +283,7 @@ export default function Composer({
                     ))}
                   </select>
                 </label>
-                <span className="num" style={{ fontSize: 12, color: 'var(--muted)' }}>
+                <span className="num hint-sm">
                   ใช้ไป {quotaUsed}/{quotaCap} ครั้งเดือนนี้
                 </span>
               </div>
@@ -314,12 +314,12 @@ export default function Composer({
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
             <span className="label">รูป</span>
             {hasImage && (
-              <span style={{ fontSize: 12, color: 'var(--muted)' }}>
+              <span className="hint-sm">
                 {shots.length} ใบ{isCarousel ? ' · ผู้ชมเลื่อนดูได้บนโพสต์จริง' : ''}
               </span>
             )}
             <span className="grow" />
-            <span style={{ fontSize: 12, color: 'var(--muted)' }}>สูงสุด {MAX_MEDIA} ใบ</span>
+            <span className="hint-sm">สูงสุด {MAX_MEDIA} ใบ</span>
           </div>
 
           {hasImage && (
@@ -338,7 +338,7 @@ export default function Composer({
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {!replacingImage ? (
               <>
-                <span style={{ fontSize: 12.5, color: 'var(--muted)' }}>
+                <span className="hint">
                   {preloaded && !editing ? 'ใช้โปสเตอร์ที่เพิ่งสร้าง' : 'ใช้รูปเดิมของโพสต์นี้'}
                 </span>
                 <button type="button" className="btn btn-sm" style={{ alignSelf: 'flex-start' }}
@@ -359,7 +359,7 @@ export default function Composer({
               </span>
             )}
             {heavy && (
-              <span style={{ fontSize: 12.5, color: 'var(--muted)' }}>
+              <span className="hint">
                 มีไฟล์ใหญ่กว่า 3 MB ตอนกดบันทึกอาจใช้เวลาสักครู่บนเน็ตมือถือ
               </span>
             )}
@@ -410,7 +410,7 @@ export default function Composer({
         {/* ปุ่มลงมือ ค้างอยู่ล่างจอ กดได้โดยไม่ต้องเลื่อนกลับ */}
         <div className="actions-bar">
           {busy && (
-            <span style={{ fontSize: 12.5, color: 'var(--muted)' }}>
+            <span className="hint">
               {picked.length
                 ? 'กำลังอัปโหลดรูป ' + picked.length + ' ใบและบันทึก…'
                 : 'กำลังบันทึก…'}
@@ -479,7 +479,7 @@ export default function Composer({
               <span className="avatar" data-platform="facebook">FB</span>
               <span style={{ display: 'flex', flexDirection: 'column' }}>
                 <span style={{ fontSize: 13.5, fontWeight: 600 }}>{previewPage?.display_name}</span>
-                <span className="num" style={{ fontSize: 12, color: 'var(--muted)' }}>
+                <span className="num hint-sm">
                   {chosenDate?.toLocaleString('th-TH', {
                     day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
                   }) ?? 'ยังไม่ได้เลือกเวลา'} · สาธารณะ
