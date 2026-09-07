@@ -85,6 +85,21 @@ export const env = {
     publicBase: process.env.S3_PUBLIC_BASE ?? '',
   },
 
+  mail: {
+    /** mock = เขียนลง storage/sent-mail.json แทนการส่งจริง เหตุผลเดียวกับ notify */
+    transport: process.env.MAIL_TRANSPORT ?? 'mock',
+    host: process.env.MAIL_HOST ?? '',
+    port: Number(process.env.MAIL_PORT ?? 587),
+    /** true = ต่อ TLS ตั้งแต่แรก (พอร์ต 465) · false = ต่อธรรมดาแล้ว STARTTLS (587) */
+    secure: process.env.MAIL_SECURE === '1',
+    starttls: process.env.MAIL_STARTTLS !== '0',
+    user: process.env.MAIL_USER ?? '',
+    pass: process.env.MAIL_PASS ?? '',
+    from: process.env.MAIL_FROM ?? '',
+    helo: process.env.MAIL_HELO ?? 'post-scheduler.local',
+    timeoutMs: Number(process.env.MAIL_TIMEOUT_MS ?? 15_000),
+  },
+
   notify: {
     /** mock = เขียนลงไฟล์แทนการยิงออกเน็ต กันส่งข้อความจริงหาคนโดยไม่ตั้งใจตอนทดสอบ */
     transport: process.env.NOTIFY_TRANSPORT ?? 'mock',

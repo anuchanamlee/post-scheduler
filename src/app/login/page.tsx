@@ -21,6 +21,7 @@ export default function LoginPage() {
           <input name="password" type="password" defaultValue="demo1234" required />
         </label>
         <button disabled={pending}>{pending ? 'กำลังเข้าสู่ระบบ…' : 'เข้าสู่ระบบ'}</button>
+        <p className="hint"><a href="/forgot">ลืมรหัสผ่าน</a></p>
       </form>
     </div>
   );

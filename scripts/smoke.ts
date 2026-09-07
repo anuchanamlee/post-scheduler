@@ -41,6 +41,8 @@ import {
   cancelPost, createPost, duplicatePost, getPost, movePostToDay, postsInRange,
   publishDraft, updatePost,
 } from '../src/core/scheduler.js';
+import { consumeReset, requestReset, resetTokenValid } from '../src/core/reset.js';
+import { sendMail } from '../src/lib/mail.js';
 
 /**
  * ทดสอบพฤติกรรมที่ทำให้ระบบจริงพัง แล้วรายงานผลเป็น exit code
@@ -82,6 +84,64 @@ async function readSent(): Promise<Array<{ destination: string; text: string }>>
   } catch {
     return [];
   }
+}
+
+async function readMail(): Promise<Array<{ to: string; subject: string; text: string }>> {
+  try {
+    return JSON.parse(await fs.readFile(path.join(env.storageDir, 'sent-mail.json'), 'utf8'));
+  } catch {
+    return [];
+  }
+}
+
+function tokenFrom(mailText: string): string {
+  const line = mailText.split('\n').find((l) => l.includes('/reset/')) ?? '';
+  return line.trim().split('/reset/')[1] ?? '';
+}
+
+/**
+ * เซิร์ฟเวอร์ SMTP จำลอง — พูดตามโปรโตคอลจริงพอให้ client เดินจนจบ
+ * แล้วเก็บทุกไบต์ที่ได้รับไว้ให้ตรวจ
+ *
+ * มีเพราะ transport แบบ mock พิสูจน์ได้แค่ว่าเราเรียกฟังก์ชันส่ง
+ * ไม่ได้พิสูจน์ว่าสิ่งที่ส่งออกไปเป็น SMTP ที่ปลายทางอ่านรู้เรื่อง
+ */
+async function fakeSmtp() {
+  const net = await import('node:net');
+  let transcript = '';
+  const server = net.createServer((sock) => {
+    let inData = false;
+    // 0 = ยังไม่เริ่ม · 1 = รอชื่อผู้ใช้ · 2 = รอรหัส — นับสถานะตรงๆ
+    // เดาจากสิ่งที่ไคลเอนต์ส่งมาไม่ได้ ทั้งสองบรรทัดหน้าตาเหมือนกัน (base64 เปล่าๆ)
+    let authStep = 0;
+    sock.setEncoding('utf8');
+    sock.write('220 fake ESMTP\r\n');
+    sock.on('data', (chunk: string) => {
+      transcript += chunk;
+      for (const line of chunk.split('\r\n')) {
+        if (inData) {
+          if (line === '.') { inData = false; sock.write('250 OK\r\n'); }
+          continue;
+        }
+        if (/^EHLO/i.test(line)) sock.write('250-fake\r\n250 AUTH LOGIN\r\n');
+        else if (/^AUTH LOGIN/i.test(line)) { authStep = 1; sock.write('334 VXNlcm5hbWU6\r\n'); }
+        else if (/^MAIL FROM/i.test(line)) sock.write('250 OK\r\n');
+        else if (/^RCPT TO/i.test(line)) sock.write('250 OK\r\n');
+        else if (/^DATA/i.test(line)) { inData = true; sock.write('354 go ahead\r\n'); }
+        else if (/^QUIT/i.test(line)) sock.end('221 bye\r\n');
+        else if (authStep === 1) { authStep = 2; sock.write('334 UGFzc3dvcmQ6\r\n'); }
+        else if (authStep === 2) { authStep = 3; sock.write('235 OK\r\n'); }
+      }
+    });
+    sock.on('error', () => {});
+  });
+  await new Promise<void>((r) => server.listen(0, '127.0.0.1', r));
+  const port = (server.address() as { port: number }).port;
+  return {
+    port,
+    transcript: () => transcript,
+    close: () => new Promise<void>((r) => server.close(() => r())),
+  };
 }
 
 async function readFeed(): Promise<MockPost[]> {
@@ -1286,6 +1346,140 @@ async function main() {
     `SELECT count(*) AS n FROM api_call_log WHERE request_meta::text ILIKE '%token%'`,
   );
   check('E2 ไม่มี token ใน api_call_log', Number(leak?.n) === 0);
+
+  // ── ลืมรหัสผ่าน ────────────────────────────────────────────
+  //
+  // เดิมลืมรหัส = ต้องรบกวนเจ้าของให้ตั้งใหม่ให้ ซึ่งแปลว่าเจ้าของต้องรู้รหัสของคนอื่น
+  // และรหัสนั้นค้างอยู่ในแชทตลอดไป — ปัญหาเดียวกับที่ changePassword มีไว้แก้
+  const forgetful = await one<{ id: string; email: string; password_hash: string }>(
+    `SELECT id, email, password_hash FROM users ORDER BY created_at LIMIT 1`);
+  await query(`DELETE FROM password_resets WHERE user_id = $1`, [forgetful!.id]);
+  await query(`DELETE FROM login_attempts WHERE lower(email) = lower($1)`, [forgetful!.email]);
+  const mailBefore = (await readMail()).length;
+
+  await requestReset(forgetful!.email);
+  const mailAfter = await readMail();
+  check('ขอลิงก์แล้วมีอีเมลออกไป 1 ฉบับ', mailAfter.length === mailBefore + 1);
+  const link = (mailAfter[0]?.text ?? '').split('\n').find((l) => l.includes('/reset/')) ?? '';
+  const token = link.trim().split('/reset/')[1] ?? '';
+  check('อีเมลมีลิงก์ตั้งรหัสใหม่', token.length > 20);
+
+  // เก็บลายนิ้วมือ ไม่ใช่ตัว token — ใครอ่าน DB ได้ต้องเอาไปตั้งรหัสใหม่ไม่ได้
+  const stored = await one<{ n: string }>(
+    `SELECT count(*) AS n FROM password_resets WHERE token_fp = $1`, [token]);
+  check('DB ไม่ได้เก็บ token ตัวเต็ม', Number(stored?.n) === 0);
+
+  // อีเมลที่ไม่มีในระบบต้องเงียบสนิท ไม่งั้นหน้านี้กลายเป็นเครื่องมือไล่เช็คว่าใครมีบัญชี
+  const beforeUnknown = (await readMail()).length;
+  await requestReset(`ไม่มีจริง-${RUN}@example.com`);
+  check('อีเมลที่ไม่มีบัญชี ไม่ส่งอะไรออกไปเลย',
+        (await readMail()).length === beforeUnknown);
+
+  check('ลิงก์ที่ยังไม่ถูกใช้ ใช้ได้', await resetTokenValid(token));
+  await badPath('รหัสใหม่สั้นเกินไปต้องไม่ผ่าน', () => consumeReset(token, 'สั้น'));
+
+  // session ที่ค้างอยู่ต้องตาย: คนที่มาถึงหน้านี้คือคนที่เข้าไม่ได้อยู่แล้ว
+  // ส่วนคนที่ยังล็อกอินค้างอาจเป็นคนที่เรากำลังไล่ออก
+  await query(
+    `INSERT INTO sessions (user_id, tenant_id, token, expires_at)
+     SELECT $1, tenant_id, $2, now() + interval '1 day' FROM users WHERE id = $1`,
+    [forgetful!.id, `ค้างอยู่-${RUN}`]);
+  await consumeReset(token, `รหัสใหม่ยาวพอ-${RUN}`);
+  const liveSessions = await one<{ n: string }>(
+    `SELECT count(*) AS n FROM sessions WHERE user_id = $1`, [forgetful!.id]);
+  check('ตั้งรหัสใหม่แล้ว session เดิมถูกเตะออกหมด', Number(liveSessions?.n) === 0);
+
+  const afterReset = await one<{ password_hash: string }>(
+    `SELECT password_hash FROM users WHERE id = $1`, [forgetful!.id]);
+  check('รหัสใหม่ใช้ได้จริง', verifyPassword(`รหัสใหม่ยาวพอ-${RUN}`, afterReset!.password_hash));
+
+  await badPath('ลิงก์เดิมใช้ซ้ำไม่ได้',
+                () => consumeReset(token, `พยายามอีกรอบ-${RUN}`));
+  check('ลิงก์ที่ใช้แล้วไม่ผ่านการตรวจ', !(await resetTokenValid(token)));
+
+  // ขอใหม่ต้องฆ่าของเก่า ไม่งั้นลิงก์ในเมลฉบับก่อน (และในมือคนที่เห็นเมลนั้น) ยังใช้ได้
+  await query(`DELETE FROM password_resets WHERE user_id = $1`, [forgetful!.id]);
+  await requestReset(forgetful!.email);
+  const first = tokenFrom((await readMail())[0]?.text ?? '');
+  await requestReset(forgetful!.email);
+  const second = tokenFrom((await readMail())[0]?.text ?? '');
+  check('ขอลิงก์ใหม่แล้วลิงก์เก่าใช้ไม่ได้ทันที', !(await resetTokenValid(first)));
+  check('ลิงก์ล่าสุดใช้ได้', await resetTokenValid(second));
+
+  // หมดอายุแล้วต้องไม่ผ่าน — ย้อนเวลาแทนการรอจริง
+  await query(`UPDATE password_resets SET expires_at = now() - interval '1 minute'
+                WHERE user_id = $1 AND used_at IS NULL`, [forgetful!.id]);
+  check('ลิงก์หมดอายุใช้ไม่ได้', !(await resetTokenValid(second)));
+
+  // ยิงซ้ำจนกล่องจดหมายเจ้าของร้านเต็มไม่ได้
+  await query(`DELETE FROM password_resets WHERE user_id = $1`, [forgetful!.id]);
+  let sentInHour = 0;
+  const beforeFlood = (await readMail()).length;
+  for (let i = 0; i < 6; i++) await requestReset(forgetful!.email);
+  sentInHour = (await readMail()).length - beforeFlood;
+  check('ขอถี่ๆ ถูกจำกัดจำนวนอีเมลต่อชั่วโมง', sentInHour <= 3, `ส่งออกไป ${sentInHour} ฉบับ`);
+
+  // ล็อกจากการเดารหัสต้องหลุดหลังตั้งรหัสใหม่ ไม่งั้นตั้งเสร็จแล้วยังเข้าไม่ได้อีก 15 นาที
+  await query(
+    `INSERT INTO login_attempts (email, fails, locked_until)
+     VALUES ($1, 9, now() + interval '15 minutes')
+     ON CONFLICT (email) DO UPDATE SET fails = 9, locked_until = now() + interval '15 minutes'`,
+    [forgetful!.email]);
+  await query(`DELETE FROM password_resets WHERE user_id = $1`, [forgetful!.id]);
+  await requestReset(forgetful!.email);
+  await consumeReset(tokenFrom((await readMail())[0]?.text ?? ''), `ปลดล็อกด้วย-${RUN}`);
+  const stillLocked = await one(
+    `SELECT 1 FROM login_attempts WHERE lower(email) = lower($1)`, [forgetful!.email]);
+  check('ตั้งรหัสใหม่แล้วการล็อกจากการเดารหัสถูกล้าง', !stillLocked);
+
+  // ── ส่งอีเมลจริงผ่าน SMTP ──────────────────────────────────
+  //
+  // mock พิสูจน์ได้แค่ว่าเราเรียกฟังก์ชันส่ง ไม่ได้พิสูจน์ว่าพูด SMTP เป็น
+  // เซิร์ฟเวอร์จำลองตัวนี้พูดตามโปรโตคอลจริง แล้วเก็บสิ่งที่เราส่งมาให้ตรวจ
+  const smtp = await fakeSmtp();
+  try {
+    Object.assign(env.mail, {
+      transport: 'smtp', host: '127.0.0.1', port: smtp.port,
+      secure: false, starttls: false, user: 'ผู้ใช้', pass: 'ลับ',
+      from: 'no-reply@example.com',
+    });
+    await sendMail({ to: forgetful!.email, subject: 'ทดสอบ ภาษาไทย', text: 'บรรทัดแรก\n.จุดนำหน้า' });
+    const wire = smtp.transcript();
+    check('SMTP: บอกผู้ส่งและผู้รับถูกต้อง',
+          wire.includes('MAIL FROM:<no-reply@example.com>')
+          && wire.includes(`RCPT TO:<${forgetful!.email}>`));
+    check('SMTP: ล็อกอินด้วย AUTH LOGIN ที่ถอดกลับได้',
+          wire.includes(Buffer.from('ผู้ใช้').toString('base64')));
+    check('SMTP: หัวข้อภาษาไทยถูกเข้ารหัสตาม RFC 2047',
+          wire.includes('=?UTF-8?B?') && !wire.includes('Subject: ทดสอบ'));
+    check('SMTP: จุดต้นบรรทัดถูกเบิ้ล ข้อความไม่ถูกตัดกลางคัน',
+          wire.includes('\r\n..จุดนำหน้า\r\n'));
+    check('SMTP: ปิดท้ายด้วยจุดเดี่ยวแล้วจึง QUIT',
+          wire.includes('\r\n.\r\nQUIT'));
+  } finally {
+    Object.assign(env.mail, { transport: 'mock', host: '', user: '', pass: '' });
+    await smtp.close();
+  }
+
+  // คืนรหัสเดิมให้บัญชีที่ยืมมาทดสอบ — เทสต์ชุดนี้เปลี่ยนรหัสจริงไปหลายรอบ
+  // ไม่คืน = รันเทสต์ทีไร รหัสที่ README บอกไว้ (demo1234) ก็ใช้เข้าไม่ได้อีกเลย
+  await query(`UPDATE users SET password_hash = $2 WHERE id = $1`,
+              [forgetful!.id, forgetful!.password_hash]);
+  await query(`DELETE FROM password_resets WHERE user_id = $1`, [forgetful!.id]);
+  const restored = await one<{ password_hash: string }>(
+    `SELECT password_hash FROM users WHERE id = $1`, [forgetful!.id]);
+  check('เทสต์คืนรหัสผ่านเดิมของบัญชีที่ยืมมาใช้',
+        restored!.password_hash === forgetful!.password_hash);
+
+  await badPath('ตั้งค่า SMTP ไม่ครบแล้วส่ง ต้องฟ้อง ไม่ใช่เงียบ', async () => {
+    Object.assign(env.mail, { transport: 'smtp', host: '', from: '' });
+    try {
+      await sendMail({ to: 'a@example.com', subject: 'x', text: 'y' });
+    } finally {
+      Object.assign(env.mail, { transport: 'mock' });
+    }
+  });
+
 
   console.log(`\n${failures === 0 ? 'ผ่านทั้งหมด' : `ไม่ผ่าน ${failures} ข้อ`}`);
   // เก็บกวาดของที่รอบนี้สร้าง ไม่ให้ปนกับข้อมูลตัวอย่างที่เอาไว้โชว์

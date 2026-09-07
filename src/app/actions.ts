@@ -23,6 +23,7 @@ import {
   submitForApproval, type Role,
 } from '../core/approval.js';
 import { renderPoster, type PosterAspect, type PosterInput } from '../content/poster.js';
+import { consumeReset, requestReset } from '../core/reset.js';
 
 
 /** ทุก action ที่เปลี่ยนของจริงต้องบอกผลกลับ ไม่ใช่รีเฟรชเงียบๆ */
@@ -50,6 +51,38 @@ export async function loginAction(_prev: unknown, form: FormData) {
     return { error: (err as Error).message };
   }
   redirect('/');
+}
+
+/**
+ * ขอลิงก์ตั้งรหัสผ่านใหม่
+ *
+ * ตอบข้อความเดียวกันเสมอ ไม่ว่าอีเมลนั้นจะมีอยู่จริงหรือไม่ และไม่ว่าจะโดนตัวหน่วง
+ * ปัดตกหรือเปล่า — หน้านี้เปิดได้โดยไม่ต้องล็อกอิน คำตอบที่ต่างกันคือช่องให้คนนอก
+ * ไล่เช็คว่าใครมีบัญชีในระบบนี้
+ */
+export async function requestResetAction(_prev: unknown, form: FormData) {
+  const said = 'ถ้าอีเมลนี้มีบัญชีอยู่ ลิงก์ตั้งรหัสใหม่ถูกส่งไปแล้ว — ลิงก์ใช้ได้ 60 นาที';
+  try {
+    await requestReset(String(form.get('email') ?? ''));
+  } catch (err) {
+    // ส่งเมลไม่ออกเป็นเรื่องของเรา ไม่ใช่ของคนกรอก แต่เงียบไปเฉยๆ ก็ไม่ได้
+    // เจ้าของระบบต้องเห็นว่าตั้ง SMTP พลาด ไม่ใช่มารู้ตอนลูกค้าโทรมาบอกว่าไม่ได้เมล
+    console.error('[reset] ส่งอีเมลไม่สำเร็จ:', (err as Error).message);
+  }
+  return { ok: said };
+}
+
+export async function consumeResetAction(_prev: unknown, form: FormData) {
+  const password = String(form.get('password') ?? '');
+  if (password !== String(form.get('confirm') ?? '')) {
+    return { error: 'รหัสผ่านสองช่องไม่ตรงกัน' };
+  }
+  try {
+    await consumeReset(String(form.get('token') ?? ''), password);
+  } catch (err) {
+    return { error: (err as Error).message };
+  }
+  redirect('/login?reset=1');
 }
 
 export async function logoutAction() {

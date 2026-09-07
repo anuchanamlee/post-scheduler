@@ -87,6 +87,18 @@ export async function runRetention(): Promise<RetentionResult> {
     [String(d.draftDays)],
   );
 
+  // คำขอตั้งรหัสใหม่ที่ตายแล้ว — เก็บไว้ 7 วันพอให้ตอบได้ว่า "มีคนขอจริงไหม"
+  // ถ้ามีใครสงสัยว่าบัญชีถูกยึด ยาวกว่านั้นคือเก็บของที่ไม่มีใครถามแล้ว
+  out.password_resets = await purge(
+    `DELETE FROM password_resets WHERE ctid IN (
+       SELECT ctid FROM password_resets
+        WHERE expires_at < now() - interval '7 days'
+           OR used_at < now() - interval '7 days'
+        LIMIT ${BATCH}
+     ) RETURNING id`,
+    [],
+  );
+
   return out;
 }
 
