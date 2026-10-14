@@ -1,202 +1,68 @@
-# ระบบตั้งเวลาโพสต์ Facebook + Instagram
+# post-scheduler
 
-เว็บแอปสำหรับตั้งเวลาโพสต์ลงเพจ Facebook และบัญชี Instagram Professional
-พร้อมผู้ช่วยร่างแคปชั่นตามโทนของเพจ ผู้ช่วยสร้างภาพด้วย AI เครื่องมือครอปรูปตามสัดส่วน
-ของแต่ละแพลตฟอร์ม และตารางเวลาประจำที่ทำให้ไม่ต้องเลือกเวลาใหม่ทุกครั้ง
-— โพสต์ได้สูงสุด 10 รูปต่อโพสต์ (carousel)
+Scheduled posting to Facebook Pages and Instagram Professional accounts for small
+shops — with an AI caption assistant that writes in each page's own tone, AI image
+generation that never draws (mis-spelled) Thai text, platform-correct cropping, and
+carousels of up to 10 images.
 
-Next.js · PostgreSQL · Docker
+**Next.js · PostgreSQL · Docker · background worker**
 
----
+[ภาษาไทย](README.th.md) · [Architecture](docs/architecture.md) · [Deploy](docs/deploy.md)
 
-## รันในเครื่อง
+![Weekly queue](docs/screenshots/01-queue-week.png)
 
-```bash
-node scripts/setup.mjs                # ครั้งแรกครั้งเดียว — สร้าง .env + ความลับ
-docker compose up -d --build          # โหมดพัฒนา (แก้โค้ดแล้วเห็นผลทันที)
-```
+## Engineering highlights
 
-`.env` ไม่ได้อยู่ใน git (มีความลับ) แต่ compose บังคับต้องมี — ข้ามขั้นแรกแล้วรันไม่ขึ้น
-`setup.mjs` สร้าง `ENCRYPTION_KEY_HEX` กับ `CRON_SECRET` ให้เอง และ**ไม่ทับของเดิม**
-(ทับเมื่อไหร่ token ของเพจที่เก็บไว้จะถอดไม่ออกอีกเลย)
-
-**ตอนใช้งานจริงต้องรันโหมดโปรดักชัน** — วัดแล้วเร็วกว่ากันมาก
-ขั้นตอนขึ้นเซิร์ฟเวอร์เต็มๆ อยู่ที่ [`docs/deploy.md`](docs/deploy.md)
-
-```bash
-docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
-```
-
-| | หน้าคิว (6 query) | หน้า login (ไม่ query) |
-|---|---|---|
-| `next dev` | 104 ms · 13 req/s | 75 ms · 46 req/s |
-| `next start` | **29 ms · 20 req/s** | **3.6 ms · 229 req/s** |
-
-รอ ~30 วินาที แล้วเปิด http://localhost:3000
-เข้าใช้งานด้วย `owner@example.com` / `demo1234`
-
-ระบบจะตั้งฐานข้อมูล ใส่ข้อมูลตัวอย่าง (ลูกค้า 1 ราย เพจ FB + IG โทนคนละแบบ รูปตัวอย่าง
-และโพสต์ในคิว 3 ชิ้น) ให้เอง แล้ว worker จะเริ่มหยิบงานที่ถึงเวลาทันที
-
-| ที่อยู่ | คืออะไร |
+| Problem | How it is handled |
 |---|---|
-| `/` | คิวโพสต์ — ปฏิทินรายสัปดาห์ + รายละเอียดโพสต์ |
-| `/new` | เขียนโพสต์ พร้อมพรีวิวของจริงบน FB/IG |
-| `/post/<id>` | แก้โพสต์ที่ยังไม่ออก |
-| `/settings` | การเชื่อมต่อ · โทนเสียงของเพจ · โควตา AI |
-| `/forgot` · `/reset/<token>` | ลืมรหัสผ่าน — ขอลิงก์ตั้งใหม่ทางอีเมล |
-| `/alerts` | ศูนย์รวมแจ้งเตือน ย้อนดูของที่เคยเกิดได้ |
-| `/poster` | ทำโปสเตอร์สินค้าจากเทมเพลต 7 แบบ |
-| `/image` | สร้างภาพด้วย AI — ภาพประกอบ · ฉากพื้นหลัง · เปลี่ยนพื้นหลังรูปสินค้า |
-| `/approvals` | งานที่รอตรวจก่อนขึ้นเพจ |
-| `/library` | คลังรูป — ดาวน์โหลด ดูว่าใช้ที่ไหน |
-| `/crop/<id>` | เลือกกรอบครอปเอง พรีวิวสด |
-| `/insights` | ผลตอบรับ + ช่วงเวลาที่ได้ผลดีที่สุด |
-| `/mock-feed` | "เพจจำลอง" — ที่ที่โพสต์ไปโผล่เวลาใช้ provider แบบ mock |
-| `/api/health` | สถานะ database / worker / งานที่ค้าง / credential ที่ใช้ไม่ได้ |
+| Two workers (or overlapping cron runs) pick the same post | Jobs are claimed with `SELECT … FOR UPDATE SKIP LOCKED` (`src/core/queue.ts`) |
+| A retry posts the same thing twice | Every target carries an idempotency key; the publisher checks for an existing post before sending (`src/core/publisher.ts`) |
+| Retrying errors that can never succeed | Meta errors are mapped to *retryable / permanent / credential* (`src/providers/errors.ts`); bad credentials get flagged instead of hammered |
+| Page access tokens in the database | AES-256-GCM with a key version for rotation (`src/lib/crypto.ts`) |
+| A dead worker cannot report that it died | The worker pings an external heartbeat URL; silence raises the alert |
+| AI bill runs away | Per-tenant monthly image quota and USD cost cap, counted separately from captions |
+| Image models write broken Thai | Prompts forbid text; `src/content/poster.ts` draws the text with real Thai fonts |
+| A stale post fires days late | Posts that are too far past their time are not sent automatically |
 
-## ทดสอบ
+**Layering:** `core/` (publishing) and `content/` (captions, images, posters) never
+import each other; they meet only at the `scheduled_posts` / `post_targets` tables.
+The only file that knows `graph.facebook.com` is `providers/meta/client.ts`. A new
+destination is one class implementing `PublishProvider` — no change to `core/` or the UI.
+The schema is multi-tenant from day one (`tenant_id` on every table) while deploying
+one instance per customer.
 
-```bash
-docker compose exec web npm run smoke        # ตรรกะทำงานถูกไหม (197 ข้อ)
-docker compose exec web npm run check-pages  # คนเปิดเว็บแล้วเห็นไหม (18 หน้า/จุด)
-```
-
-**สองตัวนี้ตอบคนละคำถาม** — `smoke` ทดสอบว่าโค้ดทำงานถูก `check-pages` ทดสอบว่าของที่เขียน
-ต่อเข้าหน้าเว็บจริง เคยพลาดมาแล้วว่าฟีเจอร์เขียนครบ เทสต์ผ่าน build ผ่าน
-แต่ไม่เคยขึ้นหน้าเลยเพราะสคริปต์แทรก JSX หา anchor ไม่เจอแล้วเงียบ
-
-ทดสอบ 197 ข้อ ได้แก่ แก้·เลื่อนเวลา·ทำซ้ำโพสต์ได้จริง · โพสต์ที่ออกไปแล้วแก้ไม่ได้ · ร่างไม่ถูกส่งเองโดยไม่ได้สั่ง · retry แล้วไม่โพสต์ซ้ำ · โพสต์ครึ่งเดียวอ่านออกว่าเป็น `partial` ·
-worker สองตัวหยิบงานเดียวกันไม่ได้ · โพสต์ที่เลยเวลานานไม่ถูกส่งย้อนหลังเอง ·
-heartbeat · log · ไม่มี token รั่วใน log ·
-prompt สร้างภาพสั่งห้ามใส่ตัวอักษรทุกโหมด · ภาพ AI ออกมาตรงสัดส่วนที่เลือก ·
-เปลี่ยนพื้นหลังแล้วรูปสินค้าต้นฉบับไม่ถูกแตะ · โควตาภาพเต็มแล้วหยุดก่อนยิงออกไปข้างนอก
-
-## ล้างข้อมูลทดสอบ
+## Run locally
 
 ```bash
-docker compose exec web npm run reset-demo
+node scripts/setup.mjs        # first time only: writes .env with generated secrets
+docker compose up -d --build
 ```
 
-ลบโพสต์/แจ้งเตือน/log/ฟีดจำลองทั้งหมด แล้วสร้างโพสต์ตัวอย่าง 3 ชิ้นใหม่
-(เก็บลูกค้า ผู้ใช้ เพจ credential โทนเสียง และรูปต้นฉบับไว้)
-ใช้ก่อนส่งมอบหรือก่อนเดโม่ — `npm run smoke` เก็บกวาดของตัวเองอยู่แล้ว แต่ข้อมูลเก่าก่อนหน้านั้นไม่หาย
+Open http://localhost:3000 and sign in with `owner@example.com` / `demo1234`.
+Demo data is seeded and the default provider is `mock`, so the whole pipeline runs
+without a Meta app — published posts appear on `/mock-feed`.
 
-## ดูสิ่งที่เกิดขึ้น
+## Tests
 
 ```bash
-docker compose logs -f worker
-docker compose exec db psql -U app -d scheduler -c \
-  "SELECT left(caption,40), status FROM scheduled_posts ORDER BY scheduled_at"
+docker compose exec web npm run smoke        # business logic: ~190 checks against a real DB
+docker compose exec web npm run check-pages  # every page actually renders the feature
 ```
 
----
+The smoke suite covers, among others: editing / rescheduling / duplicating posts,
+published posts being immutable, retries never double-posting, partial success
+across FB + IG, two workers never claiming the same job, no tokens in logs, and the
+AI quota stopping calls before they leave the server.
 
-## ต่อของจริงเข้ากับ Meta
+## Going live with Meta
 
-ค่าเริ่มต้นคือ `DEFAULT_PROVIDER=mock` — ทั้ง pipeline ทำงานครบโดยไม่ต้องมี Meta App
-เปลี่ยนเป็นของจริงต้องทำ 3 อย่าง
+1. `npm run verify-meta -- --token … --page …` — read-only check of what a token can actually do.
+2. Onboard the page per [`docs/onboarding-runbook.md`](docs/onboarding-runbook.md); the System User token is stored encrypted.
+3. Set a public `PUBLIC_BASE_URL` (Instagram only accepts public image URLs), `DEFAULT_PROVIDER=meta` and `META_APP_SECRET`.
 
-0. **ตรวจก่อนว่าท่าเชื่อมต่อใช้ได้จริง** — คำถามที่ยังไม่มีใครตอบได้จากเอกสาร Meta
-   ```bash
-   docker compose exec web npm run verify-meta -- --token "EAAG..." --page <page-id>
-   ```
-   อ่านอย่างเดียว ไม่โพสต์อะไร บอกว่า token มี scope อะไรจริงและมองเห็นเพจไหม
-1. **onboard ลูกค้า** ตาม [`docs/onboarding-runbook.md`](docs/onboarding-runbook.md)
-   แล้วเก็บ System User token เข้าตาราง `meta_credentials` (เข้ารหัสอัตโนมัติ)
-2. **ตั้ง `PUBLIC_BASE_URL` ให้เป็น URL ที่ Meta เข้าถึงได้จริง**
-   Instagram ไม่รับไฟล์อัปโหลด รับแต่ `image_url` สาธารณะ — `localhost` ใช้ไม่ได้
-   ```bash
-   cloudflared tunnel --url http://localhost:3000
-   # แล้วตั้ง PUBLIC_BASE_URL เป็น URL ที่ได้มา
-   ```
-3. **`DEFAULT_PROVIDER=meta`** และตั้ง `META_APP_SECRET`
+Storage can be local disk (dev only) or any S3-compatible bucket (R2, B2, MinIO).
+Notifications go to LINE via the Messaging API.
 
-## ที่เก็บไฟล์
+## License
 
-ค่าเริ่มต้นเก็บในดิสก์ของ container — ใช้ตอนพัฒนาได้ แต่**ห้ามใช้กับลูกค้าจริง**
-เพราะ VPS ตายทีเดียวรูปทั้งหมดหาย
-
-```bash
-STORAGE_DRIVER=s3
-S3_ENDPOINT=https://<account>.r2.cloudflarestorage.com
-S3_BUCKET=post-scheduler
-S3_ACCESS_KEY=...
-S3_SECRET_KEY=...
-S3_PUBLIC_BASE=https://img.ร้านลูกค้า.com   # ถ้าผูกโดเมนกับ bucket แล้ว
-```
-
-ใช้ได้กับ Cloudflare R2 · Backblaze B2 · MinIO · S3 จริง
-ทดสอบในเครื่องด้วย MinIO: `docker compose --profile s3 up -d minio`
-
-## สร้างภาพด้วย AI
-
-ใช้ key เดียวกับผู้ช่วยแคปชั่น (OpenRouter) แต่คนละ endpoint และคนละโมเดล
-
-```bash
-OPENROUTER_API_KEY=sk-or-...
-OPENROUTER_IMAGE_MODEL=google/gemini-2.5-flash-image
-```
-
-**ไม่ตั้ง key ก็ยังเดินได้ทั้งเส้นทาง** — จะได้ภาพไล่สีที่ดูออกทันทีว่าไม่ใช่ของจริง
-เก็บเข้าคลัง เอาไปทำโปสเตอร์ ตั้งเวลาโพสต์ได้ครบ ใช้ทดสอบระบบโดยไม่เสียเงิน
-
-| โหมด | ทำอะไร |
-|---|---|
-| ภาพประกอบโพสต์ | ภาพเปิดโพสต์ทั่วไป |
-| ฉากพื้นหลัง | พื้นหลังโล่งไว้วางข้อความทับ — เรียกจากหน้า `/poster` ได้เลย |
-| เปลี่ยนพื้นหลังรูปสินค้า | ส่งรูปสินค้าจริงเป็นภาพอ้างอิง เปลี่ยนแค่ฉากหลัง |
-| โปสเตอร์ทั้งใบ | ให้ AI จัดองค์ประกอบทั้งใบ แล้วมาใส่ข้อความเองที่ `/poster` |
-
-**ภาพที่ได้ไม่มีตัวหนังสือ เป็นเรื่องตั้งใจ** — โมเดลสร้างภาพยังเขียนไทยไม่ถูก
-สระลอย วรรณยุกต์ผิดที่ ทุก prompt จึงสั่งห้ามใส่ตัวอักษร แล้วให้ `content/poster.ts`
-วาดข้อความทับด้วยฟอนต์ไทยจริง (Garuda/Loma) ผลพลอยได้คือแก้ราคาผิดแล้วไม่ต้องสร้างภาพใหม่
-— ไม่เสียเงินซ้ำ
-
-**สินค้าที่ AI วาดเองไม่ใช่สินค้าของร้าน** ค่าเริ่มต้นของโปสเตอร์ยังเป็นรูปถ่ายจริงเสมอ
-อยากได้ฉากสวยกับสินค้าจริงพร้อมกัน ให้ใช้โหมดเปลี่ยนพื้นหลัง
-
-เพดานกันบิลบานปลาย ตั้งที่ตาราง `tenant_limits`
-(`ai_images_per_month` ค่าเริ่มต้น 60 ใบ/เดือน · `ai_cost_cap_usd` 5 USD)
-ยอดคงเหลือดูได้ที่ `/settings` — ภาพราคาราว $0.04/ใบ แพงกว่าข้อความราว 40 เท่า
-จึงนับแยกกัน ไม่งั้นสร้างภาพอย่างเดียวก็กินโควตาแคปชั่นจนหมดเดือน
-
-## ลืมรหัสผ่าน
-
-หน้า `/forgot` ขอลิงก์ตั้งรหัสใหม่ ลิงก์ใช้ได้ **60 นาที ครั้งเดียว** และการขอครั้งใหม่
-ฆ่าลิงก์เก่าทันที ตั้งรหัสใหม่เสร็จ **ทุก session ถูกเตะออก** และการล็อกจากการเดารหัสถูกล้าง
-
-```bash
-MAIL_TRANSPORT=smtp
-MAIL_HOST=smtp.example.com
-MAIL_PORT=587          # 587 = STARTTLS · 465 = ตั้ง MAIL_SECURE=1 ด้วย
-MAIL_USER=...
-MAIL_PASS=...
-MAIL_FROM=no-reply@ร้านลูกค้า.com
-```
-
-**ไม่ตั้ง SMTP = ไม่มีเมลออกไปจริง** ค่าเริ่มต้น `MAIL_TRANSPORT=mock` เขียนลง
-`storage/sent-mail.json` แทน — ปุ่มยังกดได้ หน้าเว็บยังตอบเหมือนเดิม แต่ไม่มีใครได้เมล
-ตั้งค่าให้ครบตอน onboard ลูกค้า ไม่งั้นจะไปรู้ตอนลูกค้าลืมรหัสจริง
-
-หน้านี้ตอบข้อความเดียวกันเสมอไม่ว่าอีเมลนั้นมีบัญชีหรือไม่ — เปิดได้โดยไม่ต้องล็อกอิน
-คำตอบที่ต่างกันคือช่องให้คนนอกไล่เช็คว่าใครมีบัญชีในระบบนี้ และจำกัดที่ 3 ฉบับ/ชั่วโมง/บัญชี
-
-## แจ้งเตือนเข้า LINE
-
-ตั้งช่องทางที่ `/settings` — ใช้ **LINE Messaging API** (LINE Notify ปิดบริการแล้ว 31 มี.ค. 2025)
-สร้าง Official Account ฟรีที่ LINE Developers Console แล้วเอา channel access token กับ userId มาใส่
-
-```bash
-NOTIFY_TRANSPORT=line          # ค่าเริ่มต้นคือ mock (เขียนลงไฟล์ ไม่ยิงจริง)
-WORKER_HEARTBEAT_URL=https://hc-ping.com/xxxx   # ให้บริการภายนอกเตือนเมื่อ worker เงียบ
-```
-
-`WORKER_HEARTBEAT_URL` สำคัญ: worker ที่ตายแล้วส่งแจ้งเตือนบอกว่าตัวเองตายไม่ได้
-ต้องให้บริการภายนอกสังเกตว่า "ปิงหายไป" แทน
-
-## เอกสาร
-
-- [`docs/architecture.md`](docs/architecture.md) — โครงสร้างโปรเจกต์ ทำไมแยกชั้นแบบนี้ และจะขยายยังไง
-- [`docs/onboarding-runbook.md`](docs/onboarding-runbook.md) — ขั้นตอนรับลูกค้าใหม่ทีละขั้น
-- [`docs/decisions.md`](docs/decisions.md) — สิ่งที่ตัดสินใจไว้ และสิ่งที่ยังไม่ได้พิสูจน์
+Source available for review only — all rights reserved. See [LICENSE](LICENSE).
