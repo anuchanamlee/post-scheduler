@@ -12,6 +12,7 @@
     "worker": "tsx src/worker/main.ts",
     "smoke": "tsx scripts/smoke.ts",
     "reset-demo": "tsx scripts/reset-demo.ts",
+    "demo-wipe": "tsx scripts/demo-wipe.ts",
     "verify-meta": "tsx scripts/verify-meta.ts",
     "check-pages": "tsx scripts/check-pages.ts",
     "readiness": "tsx scripts/readiness.ts",
