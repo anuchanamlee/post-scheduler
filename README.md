@@ -5,6 +5,8 @@ shops — with an AI caption assistant that writes in each page's own tone, AI i
 generation that never draws (mis-spelled) Thai text, platform-correct cropping, and
 carousels of up to 10 images.
 
+[![CI](https://github.com/anuchanamlee/post-scheduler/actions/workflows/ci.yml/badge.svg)](https://github.com/anuchanamlee/post-scheduler/actions/workflows/ci.yml)
+
 **Next.js · PostgreSQL · Docker · background worker**
 
 [ภาษาไทย](README.th.md) · [Architecture](docs/architecture.md) · [Deploy](docs/deploy.md)
@@ -45,9 +47,12 @@ without a Meta app — published posts appear on `/mock-feed`.
 ## Tests
 
 ```bash
-docker compose exec web npm run smoke        # business logic: ~190 checks against a real DB
+docker compose exec web npm run smoke        # business logic: ~200 checks against a real DB
 docker compose exec web npm run check-pages  # every page actually renders the feature
 ```
+
+CI runs both suites on every push and pull request against a fresh PostgreSQL
+(migrate → seed → smoke → build → page checks).
 
 The smoke suite covers, among others: editing / rescheduling / duplicating posts,
 published posts being immutable, retries never double-posting, partial success

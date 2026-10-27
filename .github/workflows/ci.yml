@@ -1,0 +1,76 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      db:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: app
+          POSTGRES_PASSWORD: app
+          POSTGRES_DB: scheduler
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U app -d scheduler"
+          --health-interval 3s
+          --health-timeout 3s
+          --health-retries 20
+
+    env:
+      DATABASE_URL: postgres://app:app@localhost:5432/scheduler
+      PUBLIC_BASE_URL: http://localhost:3000
+      STORAGE_DIR: ${{ github.workspace }}/.ci-storage
+      ENCRYPTION_KEY_VERSION: "1"
+      CRON_SECRET: ci-only-secret
+      DEFAULT_PROVIDER: mock
+      NOTIFY_TRANSPORT: mock
+      MAIL_TRANSPORT: mock
+      STORAGE_DRIVER: local
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Generate a throwaway encryption key
+        run: echo "ENCRYPTION_KEY_HEX=$(openssl rand -hex 32)" >> "$GITHUB_ENV"
+
+      - run: npm ci
+      - run: npx tsc --noEmit
+
+      - name: Migrate and seed a fresh database
+        run: |
+          mkdir -p "$STORAGE_DIR"
+          npm run migrate
+          npm run seed
+
+      - name: Smoke tests (business logic against the real database)
+        run: npm run smoke
+
+      - run: npm run build
+
+      - name: Page checks (every page renders its feature)
+        run: |
+          npm run start > next.log 2>&1 &
+          for i in $(seq 1 60); do
+            # any HTTP answer means the server is up (health is not 200 without a worker)
+            curl -s -o /dev/null http://localhost:3000/api/health && break
+            sleep 1
+          done
+          npm run check-pages
+
+      - name: Server log on failure
+        if: failure()
+        run: cat next.log || true

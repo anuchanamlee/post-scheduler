@@ -179,6 +179,10 @@ async function makePost(caption: string, platforms: string[], images = 1) {
 async function main() {
   console.log('── ทดสอบพฤติกรรมของคิว ──\n');
 
+  // โพสต์ตัวอย่างจาก seed ที่ถึงเวลาแล้วต้องถูกส่งออกไปก่อน
+  // ไม่งั้นรอบแรกของ D2 จะส่งโพสต์พวกนั้นไปด้วย แล้วนับจำนวนบนฟีดเกิน
+  await runPublishCycle('smoke-drain');
+
   // D2 — publish สำเร็จแต่คำตอบหาย: retry ต้องไม่โพสต์ซ้ำ
   const before = (await readFeed()).length;
   const timeoutPost = await makePost(`ทดสอบคำตอบหาย ${RUN} #timeout`, ['facebook']);
