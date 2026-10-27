@@ -9,6 +9,9 @@ carousels of up to 10 images.
 
 **Next.js · PostgreSQL · Docker · background worker**
 
+**Live demo:** https://post-scheduler-demo.onrender.com — sign in with `owner@example.com` / `demo1234`.
+It runs with the mock providers, resets on every boot, and the free instance sleeps when idle (the first visit can take about a minute).
+
 [ภาษาไทย](README.th.md) · [Architecture](docs/architecture.md) · [Deploy](docs/deploy.md) · [Free public demo](docs/demo.md)
 
 ![Weekly queue](docs/screenshots/01-queue-week.png)
