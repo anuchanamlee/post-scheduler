@@ -1,0 +1,44 @@
+# เดโมสาธารณะบน Render แบบฟรี — ทั้ง pipeline ทำงานด้วย provider แบบ mock
+# ไม่ต้องมี Meta App, OpenRouter key หรือ S3
+#
+# วิธีใช้: Render Dashboard → New → Blueprint → เลือก repo นี้ (รายละเอียดใน docs/demo.md)
+#
+# ไม่ใช่ค่าสำหรับโปรดักชัน: ข้อมูลถูกล้างทุกครั้งที่ service บูต
+# ของจริงให้ใช้ docker-compose.prod.yml ตาม docs/deploy.md
+
+services:
+  - type: web
+    name: post-scheduler-demo
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    dockerCommand: sh scripts/demo-boot.sh
+    healthCheckPath: /login
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: post-scheduler-demo-db
+          property: connectionString
+      - key: NODE_ENV
+        value: production
+      - key: DEMO_RESET_ON_BOOT
+        value: "1"
+      - key: CRON_SECRET
+        generateValue: true
+      - key: STORAGE_DIR
+        value: /data/storage
+      - key: STORAGE_DRIVER
+        value: local
+      - key: DEFAULT_PROVIDER
+        value: mock
+      - key: NOTIFY_TRANSPORT
+        value: mock
+      - key: MAIL_TRANSPORT
+        value: mock
+
+databases:
+  - name: post-scheduler-demo-db
+    plan: free
+    databaseName: scheduler
+    user: app

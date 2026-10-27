@@ -9,7 +9,7 @@ carousels of up to 10 images.
 
 **Next.js · PostgreSQL · Docker · background worker**
 
-[ภาษาไทย](README.th.md) · [Architecture](docs/architecture.md) · [Deploy](docs/deploy.md)
+[ภาษาไทย](README.th.md) · [Architecture](docs/architecture.md) · [Deploy](docs/deploy.md) · [Free public demo](docs/demo.md)
 
 ![Weekly queue](docs/screenshots/01-queue-week.png)
 
