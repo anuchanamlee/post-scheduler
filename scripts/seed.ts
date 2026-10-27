@@ -24,6 +24,17 @@ async function main() {
 
   await query(`INSERT INTO tenant_limits (tenant_id) VALUES ($1)`, [tenantId]);
 
+  // ตารางเวลาประจำตั้งต้น จันทร์–ศุกร์ 09:00 กับ 18:00 — ค่าเดียวกับ migration 0003
+  // migration ใส่ให้เฉพาะลูกค้าที่มีอยู่ตอนรัน ฐานข้อมูลใหม่ (migrate แล้วค่อย seed) จึงต้องใส่ตรงนี้
+  await query(
+    `INSERT INTO posting_slots (tenant_id, weekday, time_of_day)
+     SELECT $1, d.wd, s.t
+       FROM (VALUES (1),(2),(3),(4),(5)) AS d(wd)
+       CROSS JOIN (VALUES ('09:00'::time), ('18:00'::time)) AS s(t)
+     ON CONFLICT DO NOTHING`,
+    [tenantId],
+  );
+
   const user = await one<{ id: string }>(
     `INSERT INTO users (tenant_id, email, password_hash, role)
      VALUES ($1, 'owner@example.com', $2, 'owner') RETURNING id`,
